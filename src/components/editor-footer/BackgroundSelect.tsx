@@ -16,14 +16,14 @@ interface BackgroundSelectProps {
 }
 
 const CATEGORY_DISPLAY_ORDER = [
+  "macos",
+  "windows",
+  "linux",
   "gradient",
   "magic",
   "raycast",
   "radiant",
   "abstract",
-  "macos",
-  "windows",
-  "linux",
 ];
 
 function sortBackgroundCategories() {
