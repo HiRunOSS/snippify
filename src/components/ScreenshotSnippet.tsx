@@ -5,7 +5,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type FormEvent,
 } from "react";
 import {useDropzone, type FileRejection} from "react-dropzone";
 import {
@@ -56,9 +55,6 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
   const uploadedImage = useEditorStore((state) => state.uploadedImage);
   const setUploadedImage = useEditorStore((state) => state.setUploadedImage);
   const previewViewportRef = useRef<HTMLElement | null>(null);
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [websiteCaptureError, setWebsiteCaptureError] = useState("");
-  const [isCapturingWebsite, setIsCapturingWebsite] = useState(false);
   const [previewWidth, setPreviewWidth] = useState(MAX_PREVIEW_WIDTH_PX);
   const imageSrc = uploadedImage;
   const safeImageScale = Math.max(50, Math.min(settings.imageScale, 150));
@@ -229,72 +225,6 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
     },
     [setUploadedImage],
   );
-
-  const importImageBlob = useCallback(
-    (blob: Blob) => {
-      return new Promise<void>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          setUploadedImage(reader.result as string);
-          resolve();
-        };
-        reader.onerror = () => {
-          reject(new Error("Unable to read captured screenshot."));
-        };
-        reader.readAsDataURL(blob);
-      });
-    },
-    [setUploadedImage],
-  );
-
-  const normalizeWebsiteUrl = (rawUrl: string) => {
-    const trimmedUrl = rawUrl.trim();
-    if (!trimmedUrl) {
-      return "";
-    }
-
-    return /^https?:\/\//i.test(trimmedUrl)
-      ? trimmedUrl
-      : `https://${trimmedUrl}`;
-  };
-
-  const handleWebsiteCapture = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const normalizedUrl = normalizeWebsiteUrl(websiteUrl);
-    if (!normalizedUrl) {
-      setWebsiteCaptureError("Enter a website URL.");
-      return;
-    }
-
-    setIsCapturingWebsite(true);
-    setWebsiteCaptureError("");
-
-    try {
-      const response = await fetch(
-        `/api/website-screenshot?url=${encodeURIComponent(normalizedUrl)}`,
-      );
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as
-          | {error?: string}
-          | null;
-        throw new Error(payload?.error ?? "Could not capture this website.");
-      }
-
-      const blob = await response.blob();
-      await importImageBlob(blob);
-      setWebsiteUrl("");
-    } catch (error) {
-      setWebsiteCaptureError(
-        error instanceof Error
-          ? error.message
-          : "Could not capture this website.",
-      );
-    } finally {
-      setIsCapturingWebsite(false);
-    }
-  };
 
   const handleDropAccepted = useCallback(
     (acceptedFiles: File[]) => {
@@ -483,45 +413,13 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
                     {isDragActive ? "Drop image here" : "Add screenshot"}
                   </p>
                   <p className="mt-1 text-sm text-white/80">
-                    Drop an image, paste one, browse, or capture a website.
+                    Drop an image, paste one, or browse from your device.
                   </p>
-
-                  <form
-                    className="mt-5 flex w-full flex-col gap-2 sm:flex-row"
-                    onSubmit={handleWebsiteCapture}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <input
-                      type="text"
-                      inputMode="url"
-                      value={websiteUrl}
-                      onChange={(event) => {
-                        setWebsiteUrl(event.target.value);
-                        setWebsiteCaptureError("");
-                      }}
-                      placeholder="https://example.com"
-                      aria-label="Website URL"
-                      className="h-10 min-w-0 flex-1 rounded-lg border border-white/25 bg-black/25 px-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-white/60 focus:ring-2 focus:ring-white/20"
-                    />
-                    <button
-                      type="submit"
-                      disabled={isCapturingWebsite}
-                      className="h-10 rounded-lg border border-white/30 bg-white/15 px-4 text-sm font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isCapturingWebsite ? "Capturing..." : "Capture"}
-                    </button>
-                  </form>
-
-                  {websiteCaptureError ? (
-                    <p className="mt-2 text-xs font-medium text-red-100">
-                      {websiteCaptureError}
-                    </p>
-                  ) : null}
 
                   <button
                     type="button"
                     onClick={open}
-                    className="mt-4 inline-flex h-9 items-center rounded-lg border border-white/30 bg-white/10 px-4 text-sm font-medium text-white/95 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+                    className="mt-5 inline-flex h-9 items-center rounded-lg border border-white/30 bg-white/10 px-4 text-sm font-medium text-white/95 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
                   >
                     Choose file
                   </button>
