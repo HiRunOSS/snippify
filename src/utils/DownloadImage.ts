@@ -24,13 +24,15 @@ function getMimeType(format: ImageExportFormat) {
 
 function getFormatQuality(format: ImageExportFormat) {
   if (format === "jpg") {
-    return 0.9;
+    return 0.98;
   }
   if (format === "webp") {
-    return 0.85;
+    return 0.96;
   }
   return 1;
 }
+
+const EXPORT_PIXEL_RATIO = 3;
 
 function triggerBrowserDownload(url: string, filename: string) {
   const link = document.createElement("a");
@@ -202,7 +204,7 @@ async function captureCanvas(node: HTMLElement) {
     height,
     useCORS: true,
     allowTaint: true,
-    scale: 2,
+    scale: EXPORT_PIXEL_RATIO,
     logging: false,
     removeContainer: true,
     ignoreElements: (el) =>
@@ -220,7 +222,7 @@ async function captureCanvasWithHtmlToImage(node: HTMLElement) {
     cacheBust: true,
     width,
     height,
-    pixelRatio: 2,
+    pixelRatio: EXPORT_PIXEL_RATIO,
     skipFonts: true,
     filter: (domNode) => {
       if (domNode instanceof HTMLElement) {

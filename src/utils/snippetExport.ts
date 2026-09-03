@@ -5,6 +5,8 @@ const getNodeSize = (node: HTMLElement) => {
   return {width, height};
 };
 
+const EXPORT_PIXEL_RATIO = 3;
+
 const getBaseOptions = (node: HTMLElement) => {
   const {width, height} = getNodeSize(node);
 
@@ -93,7 +95,7 @@ export async function saveNodeAsPng(node: HTMLElement, filename = "code.png") {
     const baseOptions = {
       ...getBaseOptions(clone),
       quality: 1,
-      pixelRatio: 2,
+      pixelRatio: EXPORT_PIXEL_RATIO,
       canvasWidth: width,
       canvasHeight: height,
     };
@@ -133,7 +135,7 @@ export async function copyNodeAsImage(node: HTMLElement) {
     const blob = await toBlob(clone, {
       ...getBaseOptions(clone),
       quality: 1,
-      pixelRatio: 2,
+      pixelRatio: EXPORT_PIXEL_RATIO,
     });
 
     if (blob && navigator.clipboard && "write" in navigator.clipboard) {
@@ -144,7 +146,7 @@ export async function copyNodeAsImage(node: HTMLElement) {
     const fallbackPng = await toPng(clone, {
       ...getBaseOptions(clone),
       quality: 1,
-      pixelRatio: 2,
+      pixelRatio: EXPORT_PIXEL_RATIO,
     });
     downloadDataUrl(fallbackPng, "code.png");
   } finally {

@@ -4,6 +4,7 @@ import Navbar from "@/components/landing/Navbar";
 import LandingFooter from "@/components/landing/Footer";
 
 import Feedback from "@/components/landing/Feedback";
+import LiveExamples from "@/components/landing/LiveExamples";
 // import SupportDialog from "@/components/landing/SupportDialog";
 
 export default function Home() {
@@ -12,6 +13,7 @@ export default function Home() {
       <Navbar />
       <main className="flex min-h-screen flex-col justify-between pb-0">
         <Hero />
+        <LiveExamples />
         <Feedback />
         <LandingFooter />
       </main>

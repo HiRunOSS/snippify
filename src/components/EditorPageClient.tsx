@@ -108,8 +108,12 @@ export default function EditorPageClient() {
           <Button
             type="button"
             aria-pressed={editorMode === "code"}
-            variant={editorMode === "code" ? "outline" : "ghost"}
-            className="h-9 flex-1 rounded-xl"
+            variant="ghost"
+            className={`h-9 flex-1 rounded-xl border transition-colors hover:border-white hover:bg-white hover:text-black ${
+              editorMode === "code"
+                ? "border-white bg-white text-black shadow-sm"
+                : "border-transparent text-white hover:shadow-sm"
+            }`}
             onClick={() => setEditorMode("code")}
           >
             Code
@@ -117,8 +121,12 @@ export default function EditorPageClient() {
           <Button
             type="button"
             aria-pressed={editorMode === "screenshot"}
-            variant={editorMode === "screenshot" ? "outline" : "ghost"}
-            className="h-9 flex-1 rounded-xl"
+            variant="ghost"
+            className={`h-9 flex-1 rounded-xl border transition-colors hover:border-white hover:bg-white hover:text-black ${
+              editorMode === "screenshot"
+                ? "border-white bg-white text-black shadow-sm"
+                : "border-transparent text-white hover:shadow-sm"
+            }`}
             onClick={() => setEditorMode("screenshot")}
           >
             Screenshot

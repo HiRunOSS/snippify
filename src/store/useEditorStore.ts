@@ -139,7 +139,7 @@ const DEFAULT_SCREENSHOT_GRADIENT =
   "center / cover no-repeat url('/backgrounds/macos/mac-bg-4.jpg')";
 const STORAGE_KEY = "snippify-editor-state";
 const CODE_SAVE_DEBOUNCE_MS = 250;
-const MAX_PERSISTED_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
+const MAX_PERSISTED_IMAGE_SIZE_BYTES = 12 * 1024 * 1024;
 
 const DEFAULT_SCREENSHOT_SETTINGS: ScreenshotSettings = {
   borderStyle: "curved",
@@ -149,7 +149,7 @@ const DEFAULT_SCREENSHOT_SETTINGS: ScreenshotSettings = {
   shadowStyle: "none",
   layoutPreset: DEFAULT_LAYOUT_PRESET,
   aspectRatio: "16:9",
-  frameStyle: "default",
+  frameStyle: "glass-light",
 };
 
 const isValidLayoutPreset = (

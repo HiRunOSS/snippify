@@ -26,7 +26,7 @@ const ASPECT_RATIO_VALUE_MAP: Record<ScreenshotAspectRatio, string> = {
 };
 
 const BACKGROUND_PADDING_PX = 40;
-const MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGE_SIZE_BYTES = 12 * 1024 * 1024;
 
 export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
   const gradient = useEditorStore((state) => state.screenshotGradient);
@@ -181,7 +181,7 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
       // Keep persisted payloads within practical localStorage bounds.
       if (file.size > MAX_IMAGE_SIZE_BYTES) {
         window.alert(
-          "Please upload an image under 4MB for reliable persistence.",
+          "Please upload an image under 12MB for reliable persistence.",
         );
         return;
       }
@@ -274,7 +274,7 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
 
     if (firstErrorCode === "file-too-large") {
       window.alert(
-        "Please upload an image under 4MB for reliable persistence.",
+        "Please upload an image under 12MB for reliable persistence.",
       );
       return;
     }
@@ -388,8 +388,10 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
                   style={{
                     borderRadius: `${innerImageRadiusPx}px`,
                     height: "auto",
+                    imageRendering: "auto",
                     maxHeight: "100%",
                     maxWidth: "100%",
+                    transform: "translateZ(0)",
                     width: "auto",
                   }}
                 />

@@ -1,7 +1,6 @@
 import {NextRequest, NextResponse} from "next/server";
 
-const SCREENSHOT_STUDIO_API_URL =
-  "https://www.screenshot-studio.com/api/screenshot";
+const SCREENSHOT_API_URL = process.env.SCREENSHOT_API_URL ?? "https://api.microlink.io";
 const SCREENSHOT_TIMEOUT_MS = 30000;
 
 function normalizeUrl(rawUrl: string | null) {
@@ -65,27 +64,36 @@ export async function GET(request: NextRequest) {
   }, SCREENSHOT_TIMEOUT_MS);
 
   try {
-    const response = await fetch(SCREENSHOT_STUDIO_API_URL, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        url: targetUrl.href,
-        deviceType: "desktop",
-        colorScheme: "light",
-        forceRefresh: false,
-      }),
+    const params = new URLSearchParams({
+      url: targetUrl.href,
+      screenshot: "true",
+      meta: "false",
+      "viewport.width": "1920",
+      "viewport.height": "1080",
+      "viewport.isMobile": "false",
+      colorScheme: "light",
+    });
+
+    const response = await fetch(`${SCREENSHOT_API_URL}/?${params.toString()}`, {
+      method: "GET",
       cache: "no-store",
       signal: abortController.signal,
     });
 
     const payload = (await response.json().catch(() => null)) as {
-      screenshot?: unknown;
+      status?: unknown;
+      data?: {
+        screenshot?: {
+          url?: unknown;
+        };
+      };
     } | null;
 
-    if (!response.ok) {
+    if (
+      !response.ok ||
+      payload?.status !== "success" ||
+      typeof payload?.data?.screenshot?.url !== "string"
+    ) {
       return NextResponse.json(
         {
           error:
@@ -96,14 +104,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!payload || typeof payload.screenshot !== "string") {
+    const imageResponse = await fetch(payload.data.screenshot.url, {
+      cache: "no-store",
+      signal: abortController.signal,
+    });
+
+    if (!imageResponse.ok) {
       return NextResponse.json(
         {error: "Website capture did not return an image."},
         {status: 502},
       );
     }
 
-    const imageBuffer = Buffer.from(payload.screenshot, "base64");
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
     return new NextResponse(imageBuffer, {
       headers: {
         "Cache-Control": "no-store",
