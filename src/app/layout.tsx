@@ -1,5 +1,5 @@
 import type {Metadata} from "next";
-import {Inter} from "next/font/google";
+import {Inter, JetBrains_Mono} from "next/font/google";
 import {Analytics} from "@vercel/analytics/next";
 import {SpeedInsights} from "@vercel/speed-insights/next";
 
@@ -8,6 +8,12 @@ import "@/styles/globals.css";
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-jetbrains-mono",
 });
 
 export const metadata: Metadata = {
@@ -92,7 +98,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${inter.className} min-h-screen overflow-x-hidden overflow-y-auto bg-background text-foreground`}
+        className={`${inter.className} ${jetBrainsMono.variable} min-h-screen overflow-x-hidden overflow-y-auto bg-background text-foreground`}
       >
         {children}
         <Analytics />

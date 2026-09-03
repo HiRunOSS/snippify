@@ -1,6 +1,6 @@
 "use client";
 
-import {useCallback, useEffect} from "react";
+import {useCallback, useEffect, useState, type FormEvent} from "react";
 import {useDropzone, type FileRejection} from "react-dropzone";
 import {
   useEditorStore,
@@ -25,13 +25,23 @@ const ASPECT_RATIO_VALUE_MAP: Record<ScreenshotAspectRatio, string> = {
   "9:16": "9 / 16",
 };
 
+const BACKGROUND_PADDING_PX = 40;
+const MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
+
 export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
   const gradient = useEditorStore((state) => state.screenshotGradient);
   const setPreviewRef = useEditorStore((state) => state.setPreviewRef);
   const uploadedImage = useEditorStore((state) => state.uploadedImage);
   const setUploadedImage = useEditorStore((state) => state.setUploadedImage);
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [websiteCaptureError, setWebsiteCaptureError] = useState("");
+  const [isCapturingWebsite, setIsCapturingWebsite] = useState(false);
   const imageSrc = uploadedImage;
-  const safePaddingPercent = Math.max(0, Math.min(settings.paddingPercent, 20));
+  const safeImageScale = Math.max(50, Math.min(settings.imageScale, 150));
+  const safeBackgroundBlur = Math.max(
+    0,
+    Math.min(settings.backgroundBlur, 24),
+  );
   const aspectRatioValue =
     ASPECT_RATIO_VALUE_MAP[settings.aspectRatio] ??
     ASPECT_RATIO_VALUE_MAP["16:9"];
@@ -42,10 +52,19 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
     round: 28,
   };
   const borderRadius = borderRadiusMap[settings.borderStyle];
+  const hasVisibleFrame = settings.frameStyle !== "default";
+  const isSolidBorderFrame =
+    settings.frameStyle === "border" || settings.frameStyle === "border-dark";
+  const safeBorderWidthPx = Math.max(0, Math.min(settings.borderWidth, 24));
+  const solidBorderWidthPx = isSolidBorderFrame ? safeBorderWidthPx : 0;
+  const frameInsetWidthPx = hasVisibleFrame ? safeBorderWidthPx : 0;
+  const frameRadius = hasVisibleFrame
+    ? borderRadius + frameInsetWidthPx
+    : borderRadius;
 
   const getFrameStyles = () => {
     return {
-      borderRadius: `${borderRadius}px`,
+      borderRadius: `${frameRadius}px`,
       backgroundImage: "none",
       backgroundSize: "cover",
       backgroundPosition: "center",
@@ -57,28 +76,28 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
       case "glass-light":
         return {
           padding: "0px",
-          border: "2px solid rgba(255, 255, 255, 0.62)",
+          border: `${safeBorderWidthPx}px solid rgba(255, 255, 255, 0.62)`,
           backgroundColor: "transparent",
           backdropFilter: "blur(7px)",
         };
       case "glass-dark":
         return {
           padding: "0px",
-          border: "2px solid rgba(255, 255, 255, 0.26)",
+          border: `${safeBorderWidthPx}px solid rgba(255, 255, 255, 0.26)`,
           backgroundColor: "transparent",
           backdropFilter: "blur(7px)",
         };
       case "border":
         return {
-          padding: "4px",
+          padding: `${solidBorderWidthPx}px`,
           border: "none",
-          backgroundColor: "rgba(255, 255, 255, 0.96)",
+          backgroundColor: "rgb(255, 255, 255)",
         };
       case "border-dark":
         return {
-          padding: "4px",
+          padding: `${solidBorderWidthPx}px`,
           border: "none",
-          backgroundColor: "rgba(12, 15, 23, 1)",
+          backgroundColor: "rgb(26, 26, 26)",
         };
       case "default":
       default:
@@ -92,22 +111,28 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
     switch (settings.shadowStyle) {
       case "hug":
         return {
+          filter: "drop-shadow(0 8px 14px rgba(15, 23, 42, 0.26))",
           boxShadow:
             "0 1px 3px rgba(15, 23, 42, 0.14), 0 6px 14px rgba(15, 23, 42, 0.2)",
         };
       case "soft":
         return {
+          filter:
+            "drop-shadow(0 14px 28px rgba(15, 23, 42, 0.28)) drop-shadow(0 4px 10px rgba(15, 23, 42, 0.16))",
           boxShadow:
             "0 4px 12px rgba(15, 23, 42, 0.16), 0 14px 30px -6px rgba(15, 23, 42, 0.3)",
         };
       case "strong":
         return {
+          filter:
+            "drop-shadow(0 24px 48px rgba(15, 23, 42, 0.38)) drop-shadow(0 8px 18px rgba(15, 23, 42, 0.24))",
           boxShadow:
             "0 8px 20px rgba(15, 23, 42, 0.2), 0 24px 54px -10px rgba(15, 23, 42, 0.36)",
         };
       case "none":
       default:
         return {
+          filter: "none",
           boxShadow: "none",
         };
     }
@@ -117,10 +142,10 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
     switch (settings.frameStyle) {
       case "glass-light":
       case "glass-dark":
-        return 2;
+        return safeBorderWidthPx;
       case "border":
       case "border-dark":
-        return 4;
+        return solidBorderWidthPx;
       case "default":
       default:
         return 0;
@@ -129,14 +154,18 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
 
   const getLayoutPresetStyles = (): React.CSSProperties => {
     return {
-      transform: getLayoutTransform(settings.layoutPreset),
+      transform: `${getLayoutTransform(settings.layoutPreset)} scale(${
+        safeImageScale / 100
+      })`,
       transformOrigin: "center",
-      filter: "none",
     };
   };
 
   const frameBorderWidthPx = getFrameBorderWidthPx();
-  const innerImageRadiusPx = Math.max(borderRadius - frameBorderWidthPx, 0);
+  const innerImageRadiusPx =
+    hasVisibleFrame
+      ? borderRadius
+      : Math.max(borderRadius - frameBorderWidthPx, 0);
 
   const processUploadedFile = useCallback(
     (file: File | null | undefined) => {
@@ -150,7 +179,7 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
       }
 
       // Keep persisted payloads within practical localStorage bounds.
-      if (file.size > 4 * 1024 * 1024) {
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
         window.alert(
           "Please upload an image under 4MB for reliable persistence.",
         );
@@ -166,6 +195,72 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
     },
     [setUploadedImage],
   );
+
+  const importImageBlob = useCallback(
+    (blob: Blob) => {
+      return new Promise<void>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setUploadedImage(reader.result as string);
+          resolve();
+        };
+        reader.onerror = () => {
+          reject(new Error("Unable to read captured screenshot."));
+        };
+        reader.readAsDataURL(blob);
+      });
+    },
+    [setUploadedImage],
+  );
+
+  const normalizeWebsiteUrl = (rawUrl: string) => {
+    const trimmedUrl = rawUrl.trim();
+    if (!trimmedUrl) {
+      return "";
+    }
+
+    return /^https?:\/\//i.test(trimmedUrl)
+      ? trimmedUrl
+      : `https://${trimmedUrl}`;
+  };
+
+  const handleWebsiteCapture = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const normalizedUrl = normalizeWebsiteUrl(websiteUrl);
+    if (!normalizedUrl) {
+      setWebsiteCaptureError("Enter a website URL.");
+      return;
+    }
+
+    setIsCapturingWebsite(true);
+    setWebsiteCaptureError("");
+
+    try {
+      const response = await fetch(
+        `/api/website-screenshot?url=${encodeURIComponent(normalizedUrl)}`,
+      );
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as
+          | {error?: string}
+          | null;
+        throw new Error(payload?.error ?? "Could not capture this website.");
+      }
+
+      const blob = await response.blob();
+      await importImageBlob(blob);
+      setWebsiteUrl("");
+    } catch (error) {
+      setWebsiteCaptureError(
+        error instanceof Error
+          ? error.message
+          : "Could not capture this website.",
+      );
+    } finally {
+      setIsCapturingWebsite(false);
+    }
+  };
 
   const handleDropAccepted = useCallback(
     (acceptedFiles: File[]) => {
@@ -198,7 +293,7 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
     },
     maxFiles: 1,
     multiple: false,
-    maxSize: 4 * 1024 * 1024,
+    maxSize: MAX_IMAGE_SIZE_BYTES,
     noClick: true,
     noKeyboard: true,
     onDropAccepted: handleDropAccepted,
@@ -223,21 +318,35 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
   }, [processUploadedFile]);
 
   return (
-    <section className="flex w-full flex-col items-center gap-5 px-1 pb-6 sm:gap-6 sm:pb-8">
+    <section className="flex w-full flex-col items-center gap-5 px-1 sm:gap-6">
       <div
         ref={setPreviewRef}
         data-export-sharp-border="true"
-        className="mx-auto box-border w-full max-w-[615px] rounded-lg"
-        style={{background: gradient, padding: "32px"}}
+        className="relative mx-auto box-border w-full max-w-[900px] overflow-hidden rounded-lg"
+        style={{
+          aspectRatio: aspectRatioValue,
+          background: gradient,
+          padding: `${BACKGROUND_PADDING_PX}px`,
+        }}
       >
+        {safeBackgroundBlur > 0 ? (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{
+              background: gradient,
+              filter: `blur(${safeBackgroundBlur}px)`,
+            }}
+          />
+        ) : null}
+
         <div
           {...getRootProps({
             "data-export-sharp-border": "true",
-            className: "relative w-full",
+            className: "relative z-10 h-full w-full",
           })}
           style={{
             ...getFrameStyles(),
-            aspectRatio: aspectRatioValue,
             overflow: imageSrc ? "visible" : "hidden",
           }}
         >
@@ -246,8 +355,8 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
           <div
             className="absolute flex items-center justify-center"
             style={{
-              inset: `${safePaddingPercent}%`,
-              borderRadius: `${borderRadius}px`,
+              inset: 0,
+              borderRadius: `${frameRadius}px`,
               overflow: imageSrc ? "visible" : "hidden",
             }}
           >
@@ -256,10 +365,11 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
                 className="relative inline-flex items-center justify-center overflow-hidden"
                 data-layout-effect="true"
                 data-layout-preset={settings.layoutPreset}
+                data-image-scale={safeImageScale}
                 data-shadow-style={settings.shadowStyle}
                 data-frame-style={settings.frameStyle}
                 style={{
-                  borderRadius: `${borderRadius}px`,
+                  borderRadius: `${frameRadius}px`,
                   maxWidth: "100%",
                   maxHeight: "100%",
                   boxSizing: "border-box",
@@ -274,8 +384,14 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
                 <img
                   src={imageSrc}
                   alt="Screenshot preview"
-                  className="block h-auto w-auto max-h-full max-w-full"
-                  style={{borderRadius: `${innerImageRadiusPx}px`}}
+                  className="block"
+                  style={{
+                    borderRadius: `${innerImageRadiusPx}px`,
+                    height: "auto",
+                    maxHeight: "100%",
+                    maxWidth: "100%",
+                    width: "auto",
+                  }}
                 />
 
                 <button
@@ -306,35 +422,66 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
               </div>
             ) : (
               <div
-                className="relative flex w-full max-h-full items-center justify-center overflow-hidden"
+                className="relative flex h-full w-full items-center justify-center overflow-hidden"
                 style={{
-                  aspectRatio: ASPECT_RATIO_VALUE_MAP["16:9"],
                   borderRadius: `${borderRadius}px`,
                 }}
               >
                 <div
                   data-export-ignore="true"
-                  className={`relative z-10 flex w-[84%] max-w-[520px] flex-col items-center rounded-3xl border px-5 py-8 text-center text-white shadow-[0_10px_40px_rgba(0,0,0,0.25)] transition-all duration-200 sm:py-10 ${
+                  className={`relative z-10 flex w-[88%] max-w-[560px] flex-col items-center rounded-2xl border px-5 py-6 text-center text-white shadow-[0_18px_50px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 sm:px-7 sm:py-7 ${
                     isDragActive
-                      ? "border-cyan-200/70 bg-white/18 backdrop-blur-xl"
-                      : "border-white/20 bg-black/35 backdrop-blur-xl"
+                      ? "scale-[1.01] border-cyan-200/80 bg-white/25"
+                      : "border-white/25 bg-black/35"
                   }`}
                 >
-                  <span className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-white/35 bg-white/10 text-4xl leading-none text-white/90">
+                  <span className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-white/40 bg-white/15 text-4xl leading-none text-white/95 shadow-inner">
                     +
                   </span>
 
-                  <p className="text-lg font-semibold tracking-tight text-white/95">
-                    Drag and drop image
+                  <p className="text-xl font-semibold tracking-tight text-white/95">
+                    {isDragActive ? "Drop image here" : "Add screenshot"}
                   </p>
                   <p className="mt-1 text-sm text-white/80">
-                    Click to browse or press Ctrl+V to paste
+                    Drop an image, paste one, browse, or capture a website.
                   </p>
+
+                  <form
+                    className="mt-5 flex w-full flex-col gap-2 sm:flex-row"
+                    onSubmit={handleWebsiteCapture}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <input
+                      type="text"
+                      inputMode="url"
+                      value={websiteUrl}
+                      onChange={(event) => {
+                        setWebsiteUrl(event.target.value);
+                        setWebsiteCaptureError("");
+                      }}
+                      placeholder="https://example.com"
+                      aria-label="Website URL"
+                      className="h-10 min-w-0 flex-1 rounded-lg border border-white/25 bg-black/25 px-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-white/60 focus:ring-2 focus:ring-white/20"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isCapturingWebsite}
+                      className="h-10 rounded-lg border border-white/30 bg-white/15 px-4 text-sm font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isCapturingWebsite ? "Capturing..." : "Capture"}
+                    </button>
+                  </form>
+
+                  {websiteCaptureError ? (
+                    <p className="mt-2 text-xs font-medium text-red-100">
+                      {websiteCaptureError}
+                    </p>
+                  ) : null}
 
                   <button
                     type="button"
                     onClick={open}
-                    className="mt-5 inline-flex rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white/95 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+                    className="mt-4 inline-flex h-9 items-center rounded-lg border border-white/30 bg-white/10 px-4 text-sm font-medium text-white/95 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
                   >
                     Choose file
                   </button>

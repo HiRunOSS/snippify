@@ -93,9 +93,14 @@ function applyExportLayoutFallback(root: HTMLElement) {
       const safePreset = isLayoutPresetId(preset)
         ? preset
         : DEFAULT_LAYOUT_PRESET;
-      el.style.transform = getExportSafeLayoutTransform(safePreset);
+      const rawImageScale = Number(el.dataset.imageScale);
+      const imageScale = Number.isFinite(rawImageScale)
+        ? Math.max(50, Math.min(150, rawImageScale)) / 100
+        : 1;
+      el.style.transform = `${getExportSafeLayoutTransform(
+        safePreset,
+      )} scale(${imageScale})`;
       el.style.transformOrigin = "center";
-      el.style.filter = "none";
     });
 }
 
@@ -116,6 +121,7 @@ function applyExportVisualFixes(root: HTMLElement) {
       }
 
       if (el.dataset.shadowStyle === "none") {
+        el.style.filter = "none";
         el.style.boxShadow = "none";
       }
     });
@@ -230,6 +236,21 @@ async function captureCanvasWithHtmlToImage(node: HTMLElement) {
   });
 }
 
+async function captureCloneAsCanvas(
+  node: HTMLElement,
+  applyLayoutFallback: boolean,
+) {
+  const {clone, dispose} = createSanitizedClone(node, applyLayoutFallback);
+
+  try {
+    applySharpBorderExportFix(clone);
+    applyExportVisualFixes(clone);
+    return await captureCanvasWithHtmlToImage(clone);
+  } finally {
+    dispose();
+  }
+}
+
 export default async function exportAsImage(
   node: HTMLElement,
   options?: ExportImageOptions,
@@ -247,50 +268,21 @@ export default async function exportAsImage(
     const mimeType = getMimeType(format);
     const quality = getFormatQuality(format);
     const filename = options?.filename ?? `snippet.${format}`;
-    const useLayoutFallback = shouldUseLayoutFallback(node);
     try {
-      if (useLayoutFallback) {
-        const {clone, dispose} = createSanitizedClone(node, true);
-        try {
-          applySharpBorderExportFix(clone);
-          applyExportVisualFixes(clone);
-          const canvas = await captureCanvasWithHtmlToImage(clone);
-          const blob = await canvasToBlob(
-            canvas,
-            mimeType,
-            format === "png" ? undefined : quality,
-          );
-          downloadBlob(blob, filename);
-          onSuccess?.();
-          return;
-        } finally {
-          dispose();
-        }
-      }
-
-      const {clone, dispose} = createSanitizedClone(node, false);
-      try {
-        applySharpBorderExportFix(clone);
-        applyExportVisualFixes(clone);
-        const canvas = await captureCanvasWithHtmlToImage(clone);
-        const blob = await canvasToBlob(
-          canvas,
-          mimeType,
-          format === "png" ? undefined : quality,
-        );
-        downloadBlob(blob, filename);
-        onSuccess?.();
-        return;
-      } finally {
-        dispose();
-      }
+      const canvas = await captureCloneAsCanvas(node, false);
+      const blob = await canvasToBlob(
+        canvas,
+        mimeType,
+        format === "png" ? undefined : quality,
+      );
+      downloadBlob(blob, filename);
+      onSuccess?.();
+      return;
     } catch {
-      try {
-        const {clone, dispose} = createSanitizedClone(node, false);
+      const useLayoutFallback = shouldUseLayoutFallback(node);
+      if (useLayoutFallback) {
         try {
-          applySharpBorderExportFix(clone);
-          applyExportVisualFixes(clone);
-          const canvas = await captureCanvasWithHtmlToImage(clone);
+          const canvas = await captureCloneAsCanvas(node, true);
           const blob = await canvasToBlob(
             canvas,
             mimeType,
@@ -299,27 +291,6 @@ export default async function exportAsImage(
           downloadBlob(blob, filename);
           onSuccess?.();
           return;
-        } finally {
-          dispose();
-        }
-      } catch {
-        try {
-          const {clone, dispose} = createSanitizedClone(node, true);
-          try {
-            applySharpBorderExportFix(clone);
-            applyExportVisualFixes(clone);
-            const canvas = await captureCanvasWithHtmlToImage(clone);
-            const blob = await canvasToBlob(
-              canvas,
-              mimeType,
-              format === "png" ? undefined : quality,
-            );
-            downloadBlob(blob, filename);
-            onSuccess?.();
-            return;
-          } finally {
-            dispose();
-          }
         } catch {
           const canvas = await captureCanvas(node);
           const blob = await canvasToBlob(
@@ -332,6 +303,16 @@ export default async function exportAsImage(
           return;
         }
       }
+
+      const canvas = await captureCanvas(node);
+      const blob = await canvasToBlob(
+        canvas,
+        mimeType,
+        format === "png" ? undefined : quality,
+      );
+      downloadBlob(blob, filename);
+      onSuccess?.();
+      return;
     }
   } catch (err) {
     console.error("Could not export as image", err);

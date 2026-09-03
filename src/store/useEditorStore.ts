@@ -18,10 +18,14 @@ export type ScreenshotAspectRatio =
   | "9:16";
 
 export type ScreenshotLayoutPreset = LayoutPresetId;
+export type EditorMode = "code" | "screenshot";
+export type CodeWindowStyle = "plain" | "macos" | "windows";
 
 export interface ScreenshotSettings {
-  paddingPercent: number;
   borderStyle: "sharp" | "curved" | "round";
+  borderWidth: number;
+  imageScale: number;
+  backgroundBlur: number;
   shadowStyle: "none" | "hug" | "soft" | "strong";
   layoutPreset: ScreenshotLayoutPreset;
   aspectRatio: ScreenshotAspectRatio;
@@ -36,6 +40,10 @@ export interface ScreenshotSettings {
 type ScreenshotFrameStyle = ScreenshotSettings["frameStyle"];
 
 interface EditorStore {
+  // Active editor
+  editorMode: EditorMode;
+  setEditorMode: (editorMode: EditorMode) => void;
+
   // Code
   code: string;
   setCode: (code: string) => void;
@@ -47,6 +55,14 @@ interface EditorStore {
   // Code snippet padding
   codePadding: number;
   setCodePadding: (codePadding: number) => void;
+
+  // Code window frame
+  codeWindowStyle: CodeWindowStyle;
+  setCodeWindowStyle: (codeWindowStyle: CodeWindowStyle) => void;
+
+  // Code window title
+  codeWindowTitle: string;
+  setCodeWindowTitle: (codeWindowTitle: string) => void;
 
   // Code gradient
   codeGradient: string;
@@ -93,9 +109,12 @@ interface EditorStore {
 }
 
 type PersistedEditorState = {
+  editorMode: EditorMode;
   code: string;
   fontSize: number;
   codePadding: number;
+  codeWindowStyle: CodeWindowStyle;
+  codeWindowTitle: string;
   codeGradient: string;
   screenshotGradient: string;
   isBackgroundHidden: boolean;
@@ -108,8 +127,14 @@ type PersistedEditorState = {
 
 const DEFAULT_CODE =
   'function greetUser(name) {\n  const cleanName = name.trim();\n  if (!cleanName) return "Hello, guest!";\n  return `Hello, ${cleanName}!`;\n}\n\ngreetUser("Arun");';
+const PREVIOUS_PREMIUM_DEFAULT_CODE =
+  "function leftPad(str: string, len: number, ch: string = ' ') {\n  let pad = ''\n\n  if (typeof len !== 'number') throw new TypeError('Expected a number')\n\n  while (pad.length + str.length < len) {\n    pad += ch\n  }\n\n  return pad + str\n}";
 const DEFAULT_GRADIENT =
+  "radial-gradient( circle farthest-corner at 10% 20%,  rgba(56,207,191,1) 0%, rgba(10,70,147,1) 90.2% )";
+const PREVIOUS_MACOS_DEFAULT_GRADIENT =
   "center / cover no-repeat url('/backgrounds/macos/macos-gold.svg')";
+const PREVIOUS_PREMIUM_DEFAULT_GRADIENT =
+  "radial-gradient(circle at 18% 12%, rgba(98, 224, 213, 0.92) 0%, rgba(42, 149, 151, 0.96) 38%, rgba(34, 40, 68, 1) 100%)";
 const DEFAULT_SCREENSHOT_GRADIENT =
   "center / cover no-repeat url('/backgrounds/macos/mac-bg-4.jpg')";
 const STORAGE_KEY = "snippify-editor-state";
@@ -117,8 +142,10 @@ const CODE_SAVE_DEBOUNCE_MS = 250;
 const MAX_PERSISTED_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
 
 const DEFAULT_SCREENSHOT_SETTINGS: ScreenshotSettings = {
-  paddingPercent: 5,
   borderStyle: "curved",
+  borderWidth: 4,
+  imageScale: 100,
+  backgroundBlur: 0,
   shadowStyle: "none",
   layoutPreset: DEFAULT_LAYOUT_PRESET,
   aspectRatio: "16:9",
@@ -152,9 +179,22 @@ const normalizeFrameStyle = (value: unknown): ScreenshotFrameStyle => {
 const normalizeScreenshotSettings = (
   settings?: Partial<ScreenshotSettings>,
 ): ScreenshotSettings => {
+  const rawBorderWidth = Number(settings?.borderWidth);
+  const rawImageScale = Number(settings?.imageScale);
+  const rawBackgroundBlur = Number(settings?.backgroundBlur);
+
   return {
     ...DEFAULT_SCREENSHOT_SETTINGS,
     ...(settings ?? {}),
+    borderWidth: Number.isFinite(rawBorderWidth)
+      ? Math.max(0, Math.min(24, rawBorderWidth))
+      : DEFAULT_SCREENSHOT_SETTINGS.borderWidth,
+    imageScale: Number.isFinite(rawImageScale)
+      ? Math.max(50, Math.min(150, rawImageScale))
+      : DEFAULT_SCREENSHOT_SETTINGS.imageScale,
+    backgroundBlur: Number.isFinite(rawBackgroundBlur)
+      ? Math.max(0, Math.min(24, rawBackgroundBlur))
+      : DEFAULT_SCREENSHOT_SETTINGS.backgroundBlur,
     frameStyle: normalizeFrameStyle(settings?.frameStyle),
     layoutPreset: (() => {
       const rawLayout = settings?.layoutPreset;
@@ -184,15 +224,28 @@ const getStoredState = (): Partial<PersistedEditorState> | null => {
   }
 };
 
+const normalizeEditorMode = (value: unknown): EditorMode => {
+  return value === "screenshot" || value === "code" ? value : "code";
+};
+
+const normalizeCodeWindowStyle = (value: unknown): CodeWindowStyle => {
+  return value === "macos" || value === "windows" || value === "plain"
+    ? value
+    : "macos";
+};
+
 export const useEditorStore = create<EditorStore>((set) => {
   let persistedCache: PersistedEditorState | null = null;
   let codeSaveTimeout: ReturnType<typeof setTimeout> | null = null;
   let pendingCodePatch: Partial<PersistedEditorState> = {};
 
   const getDefaultPersistedState = (): PersistedEditorState => ({
+    editorMode: "code",
     code: DEFAULT_CODE,
-    fontSize: 17,
+    fontSize: 14,
     codePadding: 64,
+    codeWindowStyle: "macos",
+    codeWindowTitle: "",
     codeGradient: DEFAULT_GRADIENT,
     screenshotGradient: DEFAULT_SCREENSHOT_GRADIENT,
     isBackgroundHidden: false,
@@ -270,6 +323,14 @@ export const useEditorStore = create<EditorStore>((set) => {
   };
 
   return {
+    // Active editor state
+    editorMode: "code",
+    setEditorMode: (editorMode) => {
+      const newState = {editorMode};
+      saveToLocalStorage(newState);
+      set(newState);
+    },
+
     // Code state
     code: DEFAULT_CODE,
     setCode: (code) => {
@@ -279,7 +340,7 @@ export const useEditorStore = create<EditorStore>((set) => {
     },
 
     // Font size state
-    fontSize: 17,
+    fontSize: 14,
     setFontSize: (fontSize) => {
       const newState = {fontSize};
       saveToLocalStorage(newState);
@@ -290,6 +351,22 @@ export const useEditorStore = create<EditorStore>((set) => {
     codePadding: 64,
     setCodePadding: (codePadding) => {
       const newState = {codePadding};
+      saveToLocalStorage(newState);
+      set(newState);
+    },
+
+    // Code window frame state
+    codeWindowStyle: "macos",
+    setCodeWindowStyle: (codeWindowStyle) => {
+      const newState = {codeWindowStyle};
+      saveToLocalStorage(newState);
+      set(newState);
+    },
+
+    // Code window title state
+    codeWindowTitle: "",
+    setCodeWindowTitle: (codeWindowTitle) => {
+      const newState = {codeWindowTitle};
       saveToLocalStorage(newState);
       set(newState);
     },
@@ -378,17 +455,37 @@ export const useEditorStore = create<EditorStore>((set) => {
 
       set((state) => ({
         ...state,
-        code: storedState.code ?? state.code,
+        editorMode: normalizeEditorMode(storedState.editorMode),
+        code:
+          storedState.code === PREVIOUS_PREMIUM_DEFAULT_CODE
+            ? DEFAULT_CODE
+            : (storedState.code ?? state.code),
         fontSize: storedState.fontSize ?? state.fontSize,
         codePadding: storedState.codePadding ?? state.codePadding,
-        codeGradient: storedState.codeGradient ?? state.codeGradient,
+        codeWindowStyle: normalizeCodeWindowStyle(
+          storedState.codeWindowStyle,
+        ),
+        codeWindowTitle: storedState.codeWindowTitle ?? state.codeWindowTitle,
+        codeGradient:
+          storedState.codeGradient === PREVIOUS_PREMIUM_DEFAULT_GRADIENT ||
+          storedState.codeGradient === PREVIOUS_MACOS_DEFAULT_GRADIENT
+            ? DEFAULT_GRADIENT
+            : (storedState.codeGradient ?? state.codeGradient),
         screenshotGradient:
           storedState.screenshotGradient ?? state.screenshotGradient,
         isBackgroundHidden:
           storedState.isBackgroundHidden ?? state.isBackgroundHidden,
-        showLineNumbers: storedState.showLineNumbers ?? state.showLineNumbers,
+        showLineNumbers:
+          storedState.code === PREVIOUS_PREMIUM_DEFAULT_CODE &&
+          storedState.showLineNumbers === true
+            ? false
+            : (storedState.showLineNumbers ?? state.showLineNumbers),
         codeThemePreset: storedState.codeThemePreset ?? state.codeThemePreset,
-        codeLanguage: storedState.codeLanguage ?? state.codeLanguage,
+        codeLanguage:
+          storedState.code === PREVIOUS_PREMIUM_DEFAULT_CODE &&
+          storedState.codeLanguage === "typescript"
+            ? "javascript"
+            : (storedState.codeLanguage ?? state.codeLanguage),
         uploadedImage: storedState.uploadedImage ?? state.uploadedImage,
         screenshotSettings: storedState.screenshotSettings
           ? normalizeScreenshotSettings({
@@ -401,6 +498,30 @@ export const useEditorStore = create<EditorStore>((set) => {
       persistedCache = {
         ...getDefaultPersistedState(),
         ...storedState,
+        code:
+          storedState.code === PREVIOUS_PREMIUM_DEFAULT_CODE
+            ? DEFAULT_CODE
+            : (storedState.code ?? DEFAULT_CODE),
+        codeGradient:
+          storedState.codeGradient === PREVIOUS_PREMIUM_DEFAULT_GRADIENT ||
+          storedState.codeGradient === PREVIOUS_MACOS_DEFAULT_GRADIENT
+            ? DEFAULT_GRADIENT
+            : (storedState.codeGradient ?? DEFAULT_GRADIENT),
+        showLineNumbers:
+          storedState.code === PREVIOUS_PREMIUM_DEFAULT_CODE &&
+          storedState.showLineNumbers === true
+            ? false
+            : (storedState.showLineNumbers ?? false),
+        codeLanguage:
+          storedState.code === PREVIOUS_PREMIUM_DEFAULT_CODE &&
+          storedState.codeLanguage === "typescript"
+            ? "javascript"
+            : (storedState.codeLanguage ?? "javascript"),
+        editorMode: normalizeEditorMode(storedState.editorMode),
+        codeWindowStyle: normalizeCodeWindowStyle(
+          storedState.codeWindowStyle,
+        ),
+        codeWindowTitle: storedState.codeWindowTitle ?? "",
         screenshotSettings: normalizeScreenshotSettings(
           storedState.screenshotSettings,
         ),

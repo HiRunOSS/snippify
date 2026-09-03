@@ -1,7 +1,6 @@
 "use client";
 
 import {useState} from "react";
-import {ScreenshotSnippetBgCategories} from "@/constants/gradient";
 import {Button} from "../ui/button";
 import {Input} from "../ui/input";
 import {Label} from "../ui/label";
@@ -26,6 +25,7 @@ import exportAsImage, {type ImageExportFormat} from "@/utils/DownloadImage";
 import {useEditorStore} from "@/store/useEditorStore";
 import {EllipsisVertical} from "lucide-react";
 import {LAYOUT_PRESET_CATEGORIES} from "@/constants/layoutPresets";
+import BackgroundSelect from "./BackgroundSelect";
 import type {
   ScreenshotAspectRatio,
   ScreenshotLayoutPreset,
@@ -67,35 +67,7 @@ export default function ScreenshotEditorFooter({
   >("idle");
   const [isSizeDialogOpen, setIsSizeDialogOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<ImageExportFormat>("png");
-
-  const categoryDisplayOrder = [
-    "abstract",
-    "macos",
-    "windows",
-    "linux",
-    "gradient",
-    "magic",
-    "raycast",
-    "radiant",
-  ];
-  const sortedCategories = [...ScreenshotSnippetBgCategories].sort(
-    (first, second) => {
-      const firstIndex = categoryDisplayOrder.indexOf(first.id);
-      const secondIndex = categoryDisplayOrder.indexOf(second.id);
-
-      if (firstIndex === -1 && secondIndex === -1) {
-        return first.label.localeCompare(second.label);
-      }
-      if (firstIndex === -1) {
-        return 1;
-      }
-      if (secondIndex === -1) {
-        return -1;
-      }
-
-      return firstIndex - secondIndex;
-    },
-  );
+  const hasVisibleFrame = settings.frameStyle !== "default";
 
   const handleExportImage = async () => {
     if (!previewRef) {
@@ -127,8 +99,8 @@ export default function ScreenshotEditorFooter({
   return (
     <section className="fixed bottom-0 z-10 flex w-full justify-center">
       <div className="mx-auto flex w-full max-w-6xl justify-center">
-        <div className="flex min-h-auto w-full flex-col items-center rounded-t-2xl border border-black/10 bg-white/20 px-2 py-2 text-black backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/80 dark:text-gray-100 sm:min-h-20 sm:px-10 sm:py-4">
-          <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:gap-10">
+        <div className="flex min-h-auto w-full flex-col items-center rounded-t-2xl border border-black/10 bg-white/20 px-2 py-2 text-black backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/80 dark:text-gray-100 sm:min-h-20 sm:px-6 sm:py-4">
+          <div className="flex w-full flex-wrap items-end justify-center gap-x-3 gap-y-3 lg:flex-nowrap lg:gap-x-5">
             <div className="space-y-1">
               <Label
                 htmlFor="screenshot-gradient"
@@ -136,77 +108,62 @@ export default function ScreenshotEditorFooter({
               >
                 Background
               </Label>
-              <Select
+              <BackgroundSelect
+                id="screenshot-gradient"
                 value={gradient}
-                onValueChange={(value: string) => setGradient(value)}
-              >
-                <SelectTrigger
-                  id="screenshot-gradient"
-                  className="flex h-7 w-16 items-center justify-center space-x-2 border-black/30 bg-white/80 dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
-                >
-                  <div
-                    className="h-4 w-4 rounded-full"
-                    style={{background: gradient}}
-                  />
-                </SelectTrigger>
-                <SelectContent className="!w-[252px]">
-                  {sortedCategories.map((category, categoryIndex) => (
-                    <SelectGroup key={category.id}>
-                      <SelectLabel className="px-2 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
-                        {category.label}
-                      </SelectLabel>
-                      <div className="grid grid-cols-4 gap-2 px-2 pb-2">
-                        {category.options.map((item) => (
-                          <SelectItem
-                            key={item.name}
-                            value={item.gradient}
-                            className="h-auto rounded-md p-0 pr-0"
-                            aria-label={item.name}
-                            title={item.name}
-                          >
-                            <div
-                              className={`h-10 w-10 rounded-md border ${
-                                gradient === item.gradient
-                                  ? "border-blue-500 ring-2 ring-blue-400/70"
-                                  : "border-black/15 dark:border-white/15"
-                              }`}
-                              style={{background: item.gradient}}
-                            />
-                          </SelectItem>
-                        ))}
-                      </div>
-                      {categoryIndex < sortedCategories.length - 1 ? (
-                        <SelectSeparator className="mx-2 my-1 bg-black/10 dark:bg-white/10" />
-                      ) : null}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={setGradient}
+              />
             </div>
 
             <div className="space-y-1">
               <Label
-                htmlFor="screenshot-padding"
+                htmlFor="screenshot-image-scale"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
               >
-                Padding
+                Scale
               </Label>
               <Input
-                id="screenshot-padding"
+                id="screenshot-image-scale"
                 type="number"
-                min={0}
-                max={20}
-                value={settings.paddingPercent}
+                min={50}
+                max={150}
+                value={settings.imageScale}
                 onChange={(e) =>
                   onSettingsChange({
                     ...settings,
-                    paddingPercent: Math.max(
-                      0,
-                      Math.min(20, Number(e.target.value) || 0),
+                    imageScale: Math.max(
+                      50,
+                      Math.min(150, Number(e.target.value) || 100),
                     ),
                   })
                 }
-                className="h-7 w-16 border-black/30 bg-white/80 text-center dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                className="h-7 w-14 border-black/30 bg-white/80 text-center [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label
+                htmlFor="screenshot-background-blur"
+                className="text-xs text-gray-800 dark:text-gray-200/90"
+              >
+                BG Blur
+              </Label>
+              <Input
+                id="screenshot-background-blur"
+                type="number"
+                min={0}
+                max={24}
+                value={settings.backgroundBlur}
+                onChange={(e) =>
+                  onSettingsChange({
+                    ...settings,
+                    backgroundBlur: Math.max(
+                      0,
+                      Math.min(24, Number(e.target.value) || 0),
+                    ),
+                  })
+                }
+                className="h-7 w-14 border-black/30 bg-white/80 text-center [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
               />
             </div>
 
@@ -257,7 +214,7 @@ export default function ScreenshotEditorFooter({
               >
                 <SelectTrigger
                   id="screenshot-frame"
-                  className="h-7 w-28 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-24 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
                   <SelectValue placeholder="Default" />
                 </SelectTrigger>
@@ -269,6 +226,33 @@ export default function ScreenshotEditorFooter({
                   <SelectItem value="border-dark">Border Dark</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label
+                htmlFor="screenshot-border-width"
+                className="text-xs text-gray-800 dark:text-gray-200/90"
+              >
+                Border Size
+              </Label>
+              <Input
+                id="screenshot-border-width"
+                type="number"
+                min={0}
+                max={24}
+                value={settings.borderWidth}
+                disabled={!hasVisibleFrame}
+                onChange={(e) =>
+                  onSettingsChange({
+                    ...settings,
+                    borderWidth: Math.max(
+                      0,
+                      Math.min(24, Number(e.target.value) || 0),
+                    ),
+                  })
+                }
+                className="h-7 w-16 border-black/30 bg-white/80 text-center [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+              />
             </div>
 
             <div className="space-y-1">
@@ -286,7 +270,7 @@ export default function ScreenshotEditorFooter({
               >
                 <SelectTrigger
                   id="screenshot-layout"
-                  className="h-7 w-28 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-24 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
                   <SelectValue placeholder="Default" />
                 </SelectTrigger>
@@ -328,7 +312,7 @@ export default function ScreenshotEditorFooter({
               >
                 <SelectTrigger
                   id="screenshot-shadow"
-                  className="h-7 w-24 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-20 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
                   <SelectValue placeholder="None" />
                 </SelectTrigger>
@@ -354,7 +338,7 @@ export default function ScreenshotEditorFooter({
                     type="button"
                     variant="outline"
                     aria-label="Open screenshot size options"
-                    className="h-7 w-24 border-black/30 bg-white/80 px-2 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                    className="h-7 w-20 border-black/30 bg-white/80 px-2 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                   >
                     {settings.aspectRatio}
                   </Button>
@@ -420,7 +404,7 @@ export default function ScreenshotEditorFooter({
               </Dialog>
             </div>
 
-            <div className="mb-[-5px] flex flex-col space-y-1">
+            <div className="flex flex-col space-y-1">
               <Label className="text-xs text-gray-800 dark:text-gray-200/90">
                 Export image
               </Label>

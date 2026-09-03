@@ -931,9 +931,9 @@ export const ScreenshotSnippetBgCategories: ScreenshotBgCategory[] = [
   },
   {
     id: "gradient",
-    label: "Gradient",
+    label: "Gradients",
     options: [
-      ...CodeSnippetBg.slice(0, 24).map((item) => ({
+      ...CodeSnippetBg.map((item) => ({
         name: item.name,
         gradient: item.gradient,
       })),

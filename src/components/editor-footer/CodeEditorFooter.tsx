@@ -3,15 +3,10 @@
 import {type ChangeEvent, useState} from "react";
 import {
   Select,
-  SelectValue,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectGroup,
-  SelectLabel,
-  SelectSeparator,
 } from "../ui/select";
-import {ScreenshotSnippetBgCategories} from "@/constants/gradient";
 import {Input} from "../ui/input";
 import {Label} from "../ui/label";
 import {Button} from "../ui/button";
@@ -23,19 +18,30 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import {useEditorStore} from "@/store/useEditorStore";
-import {ImageIcon, Copy, EllipsisVertical} from "lucide-react";
+import {Copy, EllipsisVertical, ImageIcon} from "lucide-react";
 import {
   copyNodeAsImage,
   saveNodeAsPng,
   saveNodeAsSvg,
 } from "@/utils/snippetExport";
+import BackgroundSelect from "./BackgroundSelect";
 
 const CODE_PADDING_OPTIONS = [4, 8, 16, 32, 64, 128];
 const CODE_THEME_PRESETS = [
   {value: "snippify-midnight", label: "Midnight"},
-  {value: "snippify-carbon", label: "Carbon"},
-  {value: "snippify-github-dark", label: "GitHub Dark"},
-  {value: "snippify-emerald-night", label: "Emerald Night"},
+  {value: "snippify-sand", label: "Sand"},
+  {value: "snippify-emerald-night", label: "Forest"},
+  {value: "snippify-carbon", label: "Mono"},
+  {value: "snippify-github-dark", label: "Breeze"},
+  {value: "snippify-candy", label: "Candy"},
+  {value: "snippify-crimson", label: "Crimson"},
+  {value: "snippify-falcon", label: "Falcon"},
+  {value: "snippify-meadow", label: "Meadow"},
+  {value: "snippify-raindrop", label: "Raindrop"},
+  {value: "snippify-sunset", label: "Sunset"},
+  {value: "snippify-bitmap", label: "Bitmap"},
+  {value: "snippify-ice", label: "Ice"},
+  {value: "snippify-noir", label: "Noir"},
   {value: "snippify-porcelain", label: "Porcelain (Light)"},
 ];
 
@@ -59,6 +65,14 @@ const CODE_LANGUAGES = [
   {value: "xml", label: "XML"},
 ];
 
+const getOptionLabel = (
+  options: {value: string; label: string}[],
+  value: string,
+  fallback: string,
+) => {
+  return options.find((option) => option.value === value)?.label ?? fallback;
+};
+
 export default function CodeEditorFooter() {
   const gradient = useEditorStore((state) => state.codeGradient);
   const setGradient = useEditorStore((state) => state.setCodeGradient);
@@ -67,6 +81,10 @@ export default function CodeEditorFooter() {
   const setFontSize = useEditorStore((state) => state.setFontSize);
   const codePadding = useEditorStore((state) => state.codePadding);
   const setCodePadding = useEditorStore((state) => state.setCodePadding);
+  const codeWindowStyle = useEditorStore((state) => state.codeWindowStyle);
+  const setCodeWindowStyle = useEditorStore(
+    (state) => state.setCodeWindowStyle,
+  );
   const isBackgroundHidden = useEditorStore(
     (state) => state.isBackgroundHidden,
   );
@@ -90,35 +108,6 @@ export default function CodeEditorFooter() {
   const [exportStatus, setExportStatus] = useState<
     "idle" | "png" | "svg" | "copy" | "error"
   >("idle");
-
-  const categoryDisplayOrder = [
-    "abstract",
-    "macos",
-    "windows",
-    "linux",
-    "gradient",
-    "magic",
-    "raycast",
-    "radiant",
-  ];
-  const sortedCategories = [...ScreenshotSnippetBgCategories].sort(
-    (first, second) => {
-      const firstIndex = categoryDisplayOrder.indexOf(first.id);
-      const secondIndex = categoryDisplayOrder.indexOf(second.id);
-
-      if (firstIndex === -1 && secondIndex === -1) {
-        return first.label.localeCompare(second.label);
-      }
-      if (firstIndex === -1) {
-        return 1;
-      }
-      if (secondIndex === -1) {
-        return -1;
-      }
-
-      return firstIndex - secondIndex;
-    },
-  );
 
   const runExport = async (
     action: "png" | "svg" | "copy",
@@ -167,8 +156,8 @@ export default function CodeEditorFooter() {
   return (
     <section className="fixed bottom-0 z-10 flex w-full justify-center">
       <div className="mx-auto flex w-full max-w-6xl justify-center">
-        <div className="flex flex-col items-center w-full px-2 sm:px-10 py-2 sm:py-4 min-h-auto sm:min-h-20 rounded-t-2xl bg-white/20 text-black backdrop-blur-2xl border border-black/10 dark:bg-[#111010]/80 dark:text-gray-100 dark:border-white/10">
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-10 w-full">
+        <div className="flex min-h-auto w-full flex-col items-center rounded-t-2xl border border-black/10 bg-white/20 px-2 py-2 text-black backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/80 dark:text-gray-100 sm:min-h-20 sm:px-6 sm:py-4">
+          <div className="flex w-full flex-wrap items-end justify-center gap-x-3 gap-y-3 lg:flex-nowrap lg:gap-x-5">
             <div className="space-y-1">
               <Label
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -176,53 +165,11 @@ export default function CodeEditorFooter() {
               >
                 Bg Gradient
               </Label>
-              <Select
-                onValueChange={(value: string) => {
-                  setGradient(value);
-                }}
-              >
-                <SelectTrigger
-                  id="gradient"
-                  className="border-black/30 bg-white/80 space-x-2 w-16 h-7 flex items-center justify-center dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
-                >
-                  <div
-                    className="w-4 h-4 rounded-full"
-                    style={{background: gradient}}
-                  ></div>
-                </SelectTrigger>
-                <SelectContent className="!w-[252px]">
-                  {sortedCategories.map((category, categoryIndex) => (
-                    <SelectGroup key={category.id}>
-                      <SelectLabel className="px-2 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
-                        {category.label}
-                      </SelectLabel>
-                      <div className="grid grid-cols-4 gap-2 px-2 pb-2">
-                        {category.options.map((item) => (
-                          <SelectItem
-                            key={item.name}
-                            value={item.gradient}
-                            className="h-auto rounded-md p-0 pr-0"
-                            aria-label={item.name}
-                            title={item.name}
-                          >
-                            <div
-                              className={`h-10 w-10 rounded-md border ${
-                                gradient === item.gradient
-                                  ? "border-blue-500 ring-2 ring-blue-400/70"
-                                  : "border-black/15 dark:border-white/15"
-                              }`}
-                              style={{background: item.gradient}}
-                            />
-                          </SelectItem>
-                        ))}
-                      </div>
-                      {categoryIndex < sortedCategories.length - 1 ? (
-                        <SelectSeparator className="mx-2 my-1 bg-black/10 dark:bg-white/10" />
-                      ) : null}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
+              <BackgroundSelect
+                id="gradient"
+                value={gradient}
+                onChange={setGradient}
+              />
             </div>
             <div className="space-y-1 flex flex-col relative">
               <Label
@@ -239,9 +186,11 @@ export default function CodeEditorFooter() {
               >
                 <SelectTrigger
                   id="removeBg"
-                  className="w-16 h-7 text-xs border-black/30 bg-white/80 dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-16 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
-                  <SelectValue placeholder="Yes" />
+                  <span className="truncate">
+                    {isBackgroundHidden ? "No" : "Yes"}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="yes">Yes</SelectItem>
@@ -249,6 +198,7 @@ export default function CodeEditorFooter() {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-1 flex flex-col relative">
               <Label
                 className="text-xs w-full text-gray-800 dark:text-gray-200/90"
@@ -264,9 +214,11 @@ export default function CodeEditorFooter() {
               >
                 <SelectTrigger
                   id="lineNumbers"
-                  className="w-16 h-7 text-xs border-black/30 bg-white/80 dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-16 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
-                  <SelectValue placeholder="Yes" />
+                  <span className="truncate">
+                    {showLineNumbers ? "Yes" : "No"}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="yes">Yes</SelectItem>
@@ -290,9 +242,11 @@ export default function CodeEditorFooter() {
               >
                 <SelectTrigger
                   id="codeLanguage"
-                  className="w-28 h-7 text-xs border-black/30 bg-white/80 dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-28 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
-                  <SelectValue placeholder="Language" />
+                  <span className="truncate">
+                    {getOptionLabel(CODE_LANGUAGES, codeLanguage, "JavaScript")}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   {CODE_LANGUAGES.map((lang) => (
@@ -319,9 +273,15 @@ export default function CodeEditorFooter() {
               >
                 <SelectTrigger
                   id="codeTheme"
-                  className="w-28 h-7 text-xs border-black/30 bg-white/80 dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-32 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
-                  <SelectValue placeholder="Theme" />
+                  <span className="truncate">
+                    {getOptionLabel(
+                      CODE_THEME_PRESETS,
+                      codeThemePreset,
+                      "Midnight",
+                    )}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   {CODE_THEME_PRESETS.map((preset) => (
@@ -329,6 +289,45 @@ export default function CodeEditorFooter() {
                       {preset.label}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1 flex flex-col relative">
+              <Label
+                className="text-xs w-full text-gray-800 dark:text-gray-200/90"
+                htmlFor="codeWindowStyle"
+              >
+                Window
+              </Label>
+              <Select
+                value={codeWindowStyle}
+                onValueChange={(value: string) => {
+                  if (
+                    value === "plain" ||
+                    value === "macos" ||
+                    value === "windows"
+                  ) {
+                    setCodeWindowStyle(value);
+                  }
+                }}
+              >
+                <SelectTrigger
+                  id="codeWindowStyle"
+                  className="h-7 w-20 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                >
+                  <span className="truncate">
+                    {codeWindowStyle === "macos"
+                      ? "macOS"
+                      : codeWindowStyle === "windows"
+                        ? "Windows"
+                        : "Plain"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="plain">Plain</SelectItem>
+                  <SelectItem value="macos">macOS</SelectItem>
+                  <SelectItem value="windows">Windows</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -345,9 +344,9 @@ export default function CodeEditorFooter() {
                 type="number"
                 value={fontSize}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setFontSize(parseInt(e.target.value, 10) || 16)
+                  setFontSize(parseInt(e.target.value, 10) || 14)
                 }
-                className="w-16 text-center h-7 font-xs border-black/30 bg-white/80 [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                className="h-7 w-16 border-black/30 bg-white/80 text-center text-xs [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
               />
             </div>
             <div className="space-y-1">
@@ -365,9 +364,9 @@ export default function CodeEditorFooter() {
               >
                 <SelectTrigger
                   id="snippetPadding"
-                  className="w-16 h-7 text-xs border-black/30 bg-white/80 dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-16 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
-                  <SelectValue placeholder="32" />
+                  <span className="truncate">{codePadding}</span>
                 </SelectTrigger>
                 <SelectContent>
                   {CODE_PADDING_OPTIONS.map((padding) => (
@@ -378,6 +377,7 @@ export default function CodeEditorFooter() {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-1 flex flex-col">
               <Label className="text-xs text-gray-800 dark:text-gray-200/90">
                 Export image
@@ -388,7 +388,7 @@ export default function CodeEditorFooter() {
                     type="button"
                     variant="outline"
                     aria-label="Open export options"
-                    className="w-10 h-7 px-0 text-base font-semibold bg-white/80 border-black/30 dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                    className="h-7 w-10 border-black/30 bg-white/80 px-0 text-base font-semibold dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                   >
                     <EllipsisVertical />
                   </Button>
