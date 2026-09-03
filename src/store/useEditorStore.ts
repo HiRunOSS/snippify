@@ -182,6 +182,10 @@ const normalizeScreenshotSettings = (
   const rawBorderWidth = Number(settings?.borderWidth);
   const rawImageScale = Number(settings?.imageScale);
   const rawBackgroundBlur = Number(settings?.backgroundBlur);
+  const imageScale =
+    Number.isFinite(rawImageScale) && rawImageScale >= 50 && rawImageScale <= 150
+      ? rawImageScale
+      : DEFAULT_SCREENSHOT_SETTINGS.imageScale;
 
   return {
     ...DEFAULT_SCREENSHOT_SETTINGS,
@@ -189,9 +193,7 @@ const normalizeScreenshotSettings = (
     borderWidth: Number.isFinite(rawBorderWidth)
       ? Math.max(0, Math.min(24, rawBorderWidth))
       : DEFAULT_SCREENSHOT_SETTINGS.borderWidth,
-    imageScale: Number.isFinite(rawImageScale)
-      ? Math.max(50, Math.min(150, rawImageScale))
-      : DEFAULT_SCREENSHOT_SETTINGS.imageScale,
+    imageScale,
     backgroundBlur: Number.isFinite(rawBackgroundBlur)
       ? Math.max(0, Math.min(24, rawBackgroundBlur))
       : DEFAULT_SCREENSHOT_SETTINGS.backgroundBlur,
@@ -287,13 +289,17 @@ export const useEditorStore = create<EditorStore>((set) => {
     patch: Partial<PersistedEditorState>,
     options: {debounceCode?: boolean} = {},
   ) => {
+    const normalizedScreenshotSettings = patch.screenshotSettings
+      ? normalizeScreenshotSettings({
+          ...ensurePersistedCache().screenshotSettings,
+          ...patch.screenshotSettings,
+        })
+      : undefined;
     const nextState: PersistedEditorState = {
       ...ensurePersistedCache(),
       ...patch,
-      screenshotSettings: {
-        ...ensurePersistedCache().screenshotSettings,
-        ...(patch.screenshotSettings ?? {}),
-      },
+      screenshotSettings:
+        normalizedScreenshotSettings ?? ensurePersistedCache().screenshotSettings,
     };
     persistedCache = nextState;
 
@@ -310,10 +316,12 @@ export const useEditorStore = create<EditorStore>((set) => {
       const mergedState: PersistedEditorState = {
         ...ensurePersistedCache(),
         ...pendingCodePatch,
-        screenshotSettings: {
-          ...ensurePersistedCache().screenshotSettings,
-          ...(pendingCodePatch.screenshotSettings ?? {}),
-        },
+        screenshotSettings: pendingCodePatch.screenshotSettings
+          ? normalizeScreenshotSettings({
+              ...ensurePersistedCache().screenshotSettings,
+              ...pendingCodePatch.screenshotSettings,
+            })
+          : ensurePersistedCache().screenshotSettings,
       };
       persistedCache = mergedState;
       writePersistedState(mergedState);
@@ -436,7 +444,9 @@ export const useEditorStore = create<EditorStore>((set) => {
 
     screenshotSettings: DEFAULT_SCREENSHOT_SETTINGS,
     setScreenshotSettings: (screenshotSettings) => {
-      const newState = {screenshotSettings};
+      const newState = {
+        screenshotSettings: normalizeScreenshotSettings(screenshotSettings),
+      };
       saveToLocalStorage(newState);
       set(newState);
     },
@@ -452,52 +462,16 @@ export const useEditorStore = create<EditorStore>((set) => {
     hydrateFromStorage: () => {
       const storedState = getStoredState();
       if (!storedState) return;
-
-      set((state) => ({
-        ...state,
-        editorMode: normalizeEditorMode(storedState.editorMode),
-        code:
-          storedState.code === PREVIOUS_PREMIUM_DEFAULT_CODE
-            ? DEFAULT_CODE
-            : (storedState.code ?? state.code),
-        fontSize: storedState.fontSize ?? state.fontSize,
-        codePadding: storedState.codePadding ?? state.codePadding,
-        codeWindowStyle: normalizeCodeWindowStyle(
-          storedState.codeWindowStyle,
-        ),
-        codeWindowTitle: storedState.codeWindowTitle ?? state.codeWindowTitle,
-        codeGradient:
-          storedState.codeGradient === PREVIOUS_PREMIUM_DEFAULT_GRADIENT ||
-          storedState.codeGradient === PREVIOUS_MACOS_DEFAULT_GRADIENT
-            ? DEFAULT_GRADIENT
-            : (storedState.codeGradient ?? state.codeGradient),
-        screenshotGradient:
-          storedState.screenshotGradient ?? state.screenshotGradient,
-        isBackgroundHidden:
-          storedState.isBackgroundHidden ?? state.isBackgroundHidden,
-        showLineNumbers:
-          storedState.code === PREVIOUS_PREMIUM_DEFAULT_CODE &&
-          storedState.showLineNumbers === true
-            ? false
-            : (storedState.showLineNumbers ?? state.showLineNumbers),
-        codeThemePreset: storedState.codeThemePreset ?? state.codeThemePreset,
-        codeLanguage:
-          storedState.code === PREVIOUS_PREMIUM_DEFAULT_CODE &&
-          storedState.codeLanguage === "typescript"
-            ? "javascript"
-            : (storedState.codeLanguage ?? state.codeLanguage),
-        uploadedImage: storedState.uploadedImage ?? state.uploadedImage,
-        screenshotSettings: storedState.screenshotSettings
-          ? normalizeScreenshotSettings({
-              ...state.screenshotSettings,
-              ...storedState.screenshotSettings,
-            })
-          : state.screenshotSettings,
-      }));
-
-      persistedCache = {
+      const normalizedScreenshotSettings = storedState.screenshotSettings
+        ? normalizeScreenshotSettings({
+            ...DEFAULT_SCREENSHOT_SETTINGS,
+            ...storedState.screenshotSettings,
+          })
+        : DEFAULT_SCREENSHOT_SETTINGS;
+      const normalizedPersistedState: PersistedEditorState = {
         ...getDefaultPersistedState(),
         ...storedState,
+        editorMode: normalizeEditorMode(storedState.editorMode),
         code:
           storedState.code === PREVIOUS_PREMIUM_DEFAULT_CODE
             ? DEFAULT_CODE
@@ -517,15 +491,35 @@ export const useEditorStore = create<EditorStore>((set) => {
           storedState.codeLanguage === "typescript"
             ? "javascript"
             : (storedState.codeLanguage ?? "javascript"),
-        editorMode: normalizeEditorMode(storedState.editorMode),
         codeWindowStyle: normalizeCodeWindowStyle(
           storedState.codeWindowStyle,
         ),
         codeWindowTitle: storedState.codeWindowTitle ?? "",
-        screenshotSettings: normalizeScreenshotSettings(
-          storedState.screenshotSettings,
-        ),
+        screenshotSettings: normalizedScreenshotSettings,
       };
+
+      set((state) => ({
+        ...state,
+        editorMode: normalizedPersistedState.editorMode,
+        code: normalizedPersistedState.code,
+        fontSize: storedState.fontSize ?? state.fontSize,
+        codePadding: storedState.codePadding ?? state.codePadding,
+        codeWindowStyle: normalizedPersistedState.codeWindowStyle,
+        codeWindowTitle: normalizedPersistedState.codeWindowTitle,
+        codeGradient: normalizedPersistedState.codeGradient,
+        screenshotGradient:
+          storedState.screenshotGradient ?? state.screenshotGradient,
+        isBackgroundHidden:
+          storedState.isBackgroundHidden ?? state.isBackgroundHidden,
+        showLineNumbers: normalizedPersistedState.showLineNumbers,
+        codeThemePreset: storedState.codeThemePreset ?? state.codeThemePreset,
+        codeLanguage: normalizedPersistedState.codeLanguage,
+        uploadedImage: storedState.uploadedImage ?? state.uploadedImage,
+        screenshotSettings: normalizedScreenshotSettings,
+      }));
+
+      persistedCache = normalizedPersistedState;
+      writePersistedState(normalizedPersistedState);
     },
   };
 });

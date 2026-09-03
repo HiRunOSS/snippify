@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
       "viewport.width": "1920",
       "viewport.height": "1080",
       "viewport.isMobile": "false",
+      "viewport.deviceScaleFactor": "2",
       colorScheme: "light",
     });
 

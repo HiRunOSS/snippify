@@ -1,13 +1,22 @@
 "use client";
 
-import {useCallback, useEffect, useState, type FormEvent} from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import {useDropzone, type FileRejection} from "react-dropzone";
 import {
   useEditorStore,
   type ScreenshotAspectRatio,
   type ScreenshotSettings,
 } from "@/store/useEditorStore";
-import {getLayoutTransform} from "@/constants/layoutPresets";
+import {
+  DEFAULT_LAYOUT_PRESET,
+  getLayoutTransform,
+} from "@/constants/layoutPresets";
 
 interface ScreenshotSnippetProps {
   settings: ScreenshotSettings;
@@ -25,7 +34,20 @@ const ASPECT_RATIO_VALUE_MAP: Record<ScreenshotAspectRatio, string> = {
   "9:16": "9 / 16",
 };
 
-const BACKGROUND_PADDING_PX = 40;
+const ASPECT_RATIO_NUMBER_MAP: Record<ScreenshotAspectRatio, number> = {
+  "16:9": 16 / 9,
+  "3:2": 3 / 2,
+  "4:3": 4 / 3,
+  "5:4": 5 / 4,
+  "1:1": 1,
+  "4:5": 4 / 5,
+  "3:4": 3 / 4,
+  "2:3": 2 / 3,
+  "9:16": 9 / 16,
+};
+
+const BACKGROUND_PADDING = "clamp(28px, 4.5vw, 64px)";
+const MAX_PREVIEW_WIDTH_PX = 1200;
 const MAX_IMAGE_SIZE_BYTES = 12 * 1024 * 1024;
 
 export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
@@ -33,9 +55,11 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
   const setPreviewRef = useEditorStore((state) => state.setPreviewRef);
   const uploadedImage = useEditorStore((state) => state.uploadedImage);
   const setUploadedImage = useEditorStore((state) => state.setUploadedImage);
+  const previewViewportRef = useRef<HTMLElement | null>(null);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [websiteCaptureError, setWebsiteCaptureError] = useState("");
   const [isCapturingWebsite, setIsCapturingWebsite] = useState(false);
+  const [previewWidth, setPreviewWidth] = useState(MAX_PREVIEW_WIDTH_PX);
   const imageSrc = uploadedImage;
   const safeImageScale = Math.max(50, Math.min(settings.imageScale, 150));
   const safeBackgroundBlur = Math.max(
@@ -45,6 +69,9 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
   const aspectRatioValue =
     ASPECT_RATIO_VALUE_MAP[settings.aspectRatio] ??
     ASPECT_RATIO_VALUE_MAP["16:9"];
+  const aspectRatioNumber =
+    ASPECT_RATIO_NUMBER_MAP[settings.aspectRatio] ??
+    ASPECT_RATIO_NUMBER_MAP["16:9"];
 
   const borderRadiusMap = {
     sharp: 0,
@@ -78,14 +105,12 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
           padding: "0px",
           border: `${safeBorderWidthPx}px solid rgba(255, 255, 255, 0.62)`,
           backgroundColor: "transparent",
-          backdropFilter: "blur(7px)",
         };
       case "glass-dark":
         return {
           padding: "0px",
           border: `${safeBorderWidthPx}px solid rgba(255, 255, 255, 0.26)`,
           backgroundColor: "transparent",
-          backdropFilter: "blur(7px)",
         };
       case "border":
         return {
@@ -153,6 +178,15 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
   };
 
   const getLayoutPresetStyles = (): React.CSSProperties => {
+    if (
+      settings.layoutPreset === DEFAULT_LAYOUT_PRESET &&
+      safeImageScale === 100
+    ) {
+      return {
+        transform: "none",
+      };
+    }
+
     return {
       transform: `${getLayoutTransform(settings.layoutPreset)} scale(${
         safeImageScale / 100
@@ -317,16 +351,47 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
     };
   }, [processUploadedFile]);
 
+  useEffect(() => {
+    const viewport = previewViewportRef.current;
+    if (!viewport) {
+      return;
+    }
+
+    const updatePreviewWidth = () => {
+      const {height, width} = viewport.getBoundingClientRect();
+      const nextWidth = Math.max(
+        240,
+        Math.min(MAX_PREVIEW_WIDTH_PX, width, height * aspectRatioNumber),
+      );
+      setPreviewWidth(Math.round(nextWidth));
+    };
+
+    updatePreviewWidth();
+
+    const resizeObserver = new ResizeObserver(updatePreviewWidth);
+    resizeObserver.observe(viewport);
+    window.addEventListener("resize", updatePreviewWidth);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updatePreviewWidth);
+    };
+  }, [aspectRatioNumber]);
+
   return (
-    <section className="flex w-full flex-col items-center gap-5 px-1 sm:gap-6">
+    <section
+      ref={previewViewportRef}
+      className="flex h-full w-full flex-col items-center justify-center gap-5 px-1 sm:gap-6"
+    >
       <div
         ref={setPreviewRef}
         data-export-sharp-border="true"
-        className="relative mx-auto box-border w-full max-w-[900px] overflow-hidden rounded-lg"
+        className="relative mx-auto box-border overflow-hidden rounded-lg"
         style={{
           aspectRatio: aspectRatioValue,
           background: gradient,
-          padding: `${BACKGROUND_PADDING_PX}px`,
+          padding: BACKGROUND_PADDING,
+          width: `${previewWidth}px`,
         }}
       >
         {safeBackgroundBlur > 0 ? (
@@ -391,36 +456,9 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
                     imageRendering: "auto",
                     maxHeight: "100%",
                     maxWidth: "100%",
-                    transform: "translateZ(0)",
                     width: "auto",
                   }}
                 />
-
-                <button
-                  type="button"
-                  data-export-ignore="true"
-                  onClick={() => setUploadedImage("")}
-                  aria-label="Remove screenshot"
-                  title="Remove screenshot"
-                  className="absolute right-2 top-2 z-20 inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/25 bg-black/55 text-white backdrop-blur-sm transition hover:bg-black/70 focus:outline-none focus:ring-2 focus:ring-white/60"
-                >
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <path d="M3 6h18" />
-                    <path d="M8 6V4h8v2" />
-                    <path d="M19 6l-1 14H6L5 6" />
-                    <path d="M10 11v6" />
-                    <path d="M14 11v6" />
-                  </svg>
-                </button>
               </div>
             ) : (
               <div

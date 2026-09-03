@@ -21,9 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
-import exportAsImage, {type ImageExportFormat} from "@/utils/DownloadImage";
 import {useEditorStore} from "@/store/useEditorStore";
-import {EllipsisVertical} from "lucide-react";
 import {LAYOUT_PRESET_CATEGORIES} from "@/constants/layoutPresets";
 import BackgroundSelect from "./BackgroundSelect";
 import type {
@@ -52,56 +50,27 @@ const SCREENSHOT_ASPECT_OPTIONS: Array<{
   {value: "9:16", label: "9:16"},
 ];
 
+const clampImageScale = (value: number) => {
+  return Number.isFinite(value) && value >= 50 && value <= 150 ? value : 100;
+};
+
 export default function ScreenshotEditorFooter({
   settings,
   onSettingsChange,
 }: ScreenshotEditorFooterProps) {
   const gradient = useEditorStore((state) => state.screenshotGradient);
   const setGradient = useEditorStore((state) => state.setScreenshotGradient);
-  const previewRef = useEditorStore((state) => state.previewRef);
-  const isExporting = useEditorStore((state) => state.isExporting);
-  const setIsExporting = useEditorStore((state) => state.setIsExporting);
 
-  const [exportStatus, setExportStatus] = useState<
-    "idle" | "success" | "error"
-  >("idle");
   const [isSizeDialogOpen, setIsSizeDialogOpen] = useState(false);
-  const [exportFormat, setExportFormat] = useState<ImageExportFormat>("png");
   const hasVisibleFrame = settings.frameStyle !== "default";
-
-  const handleExportImage = async () => {
-    if (!previewRef) {
-      return;
-    }
-
-    await exportAsImage(
-      previewRef,
-      {
-        format: exportFormat,
-      },
-      () => {
-        setIsExporting(true);
-        setExportStatus("idle");
-      },
-      () => {
-        setIsExporting(false);
-        setExportStatus("success");
-        setTimeout(() => setExportStatus("idle"), 2000);
-      },
-      () => {
-        setIsExporting(false);
-        setExportStatus("error");
-        setTimeout(() => setExportStatus("idle"), 3000);
-      },
-    );
-  };
+  const safeImageScale = clampImageScale(settings.imageScale);
 
   return (
     <section className="fixed bottom-0 z-10 flex w-full justify-center">
-      <div className="mx-auto flex w-full max-w-6xl justify-center">
+      <div className="mx-auto flex w-full max-w-7xl justify-center">
         <div className="flex min-h-auto w-full flex-col items-center rounded-t-2xl border border-black/10 bg-white/20 px-2 py-2 text-black backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/80 dark:text-gray-100 sm:min-h-20 sm:px-6 sm:py-4">
-          <div className="flex w-full flex-wrap items-end justify-center gap-x-3 gap-y-3 lg:flex-nowrap lg:gap-x-5">
-            <div className="space-y-1">
+          <div className="flex w-full flex-wrap items-end justify-center gap-x-3 gap-y-3 lg:flex-nowrap lg:justify-between lg:gap-x-4">
+            <div className="w-20 space-y-1">
               <Label
                 htmlFor="screenshot-gradient"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -115,7 +84,7 @@ export default function ScreenshotEditorFooter({
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="w-20 space-y-1">
               <Label
                 htmlFor="screenshot-image-scale"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -127,21 +96,18 @@ export default function ScreenshotEditorFooter({
                 type="number"
                 min={50}
                 max={150}
-                value={settings.imageScale}
+                value={safeImageScale}
                 onChange={(e) =>
                   onSettingsChange({
                     ...settings,
-                    imageScale: Math.max(
-                      50,
-                      Math.min(150, Number(e.target.value) || 100),
-                    ),
+                    imageScale: clampImageScale(Number(e.target.value)),
                   })
                 }
-                className="h-7 w-14 border-black/30 bg-white/80 text-center [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                className="h-7 w-full border-black/30 bg-white/80 text-center [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="w-20 space-y-1">
               <Label
                 htmlFor="screenshot-background-blur"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -163,11 +129,11 @@ export default function ScreenshotEditorFooter({
                     ),
                   })
                 }
-                className="h-7 w-14 border-black/30 bg-white/80 text-center [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                className="h-7 w-full border-black/30 bg-white/80 text-center [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="w-32 space-y-1">
               <Label
                 htmlFor="screenshot-border"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -182,7 +148,7 @@ export default function ScreenshotEditorFooter({
               >
                 <SelectTrigger
                   id="screenshot-border"
-                  className="h-7 w-24 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-full border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
                   <SelectValue placeholder="Round" />
                 </SelectTrigger>
@@ -194,7 +160,7 @@ export default function ScreenshotEditorFooter({
               </Select>
             </div>
 
-            <div className="space-y-1">
+            <div className="w-36 space-y-1">
               <Label
                 htmlFor="screenshot-frame"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -214,7 +180,7 @@ export default function ScreenshotEditorFooter({
               >
                 <SelectTrigger
                   id="screenshot-frame"
-                  className="h-7 w-24 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-full border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
                   <SelectValue placeholder="Default" />
                 </SelectTrigger>
@@ -228,7 +194,7 @@ export default function ScreenshotEditorFooter({
               </Select>
             </div>
 
-            <div className="space-y-1">
+            <div className="w-24 space-y-1">
               <Label
                 htmlFor="screenshot-border-width"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -251,11 +217,11 @@ export default function ScreenshotEditorFooter({
                     ),
                   })
                 }
-                className="h-7 w-16 border-black/30 bg-white/80 text-center [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                className="h-7 w-full border-black/30 bg-white/80 text-center [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="w-32 space-y-1">
               <Label
                 htmlFor="screenshot-layout"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -270,7 +236,7 @@ export default function ScreenshotEditorFooter({
               >
                 <SelectTrigger
                   id="screenshot-layout"
-                  className="h-7 w-24 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-full border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
                   <SelectValue placeholder="Default" />
                 </SelectTrigger>
@@ -297,7 +263,7 @@ export default function ScreenshotEditorFooter({
               </Select>
             </div>
 
-            <div className="space-y-1">
+            <div className="w-28 space-y-1">
               <Label
                 htmlFor="screenshot-shadow"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -312,7 +278,7 @@ export default function ScreenshotEditorFooter({
               >
                 <SelectTrigger
                   id="screenshot-shadow"
-                  className="h-7 w-20 border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                  className="h-7 w-full border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
                   <SelectValue placeholder="None" />
                 </SelectTrigger>
@@ -325,7 +291,7 @@ export default function ScreenshotEditorFooter({
               </Select>
             </div>
 
-            <div className="space-y-1 flex flex-col">
+            <div className="flex w-24 flex-col space-y-1">
               <Label className="text-xs text-gray-800 dark:text-gray-200/90">
                 Size
               </Label>
@@ -338,7 +304,7 @@ export default function ScreenshotEditorFooter({
                     type="button"
                     variant="outline"
                     aria-label="Open screenshot size options"
-                    className="h-7 w-20 border-black/30 bg-white/80 px-2 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+                    className="h-7 w-full border-black/30 bg-white/80 px-2 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                   >
                     {settings.aspectRatio}
                   </Button>
@@ -399,75 +365,6 @@ export default function ScreenshotEditorFooter({
                         );
                       })}
                     </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-            <div className="flex flex-col space-y-1">
-              <Label className="text-xs text-gray-800 dark:text-gray-200/90">
-                Export image
-              </Label>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    aria-label="Open screenshot export options"
-                    className="h-7 w-10 border-black/30 bg-white/80 px-0 dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
-                  >
-                    <EllipsisVertical className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[340px] border-white/10 bg-[#15171c] p-4 text-gray-100">
-                  <DialogHeader>
-                    <DialogTitle>Export Screenshot</DialogTitle>
-                  </DialogHeader>
-
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <Label
-                        htmlFor="dialog-screenshot-format"
-                        className="text-xs text-gray-300"
-                      >
-                        Format
-                      </Label>
-                      <Select
-                        value={exportFormat}
-                        onValueChange={(value: ImageExportFormat) =>
-                          setExportFormat(value)
-                        }
-                      >
-                        <SelectTrigger
-                          id="dialog-screenshot-format"
-                          className="h-9 border-white/15 bg-[#111010]/80 text-sm text-gray-100"
-                        >
-                          <SelectValue placeholder="PNG" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="png">PNG</SelectItem>
-                          <SelectItem value="jpg">JPG</SelectItem>
-                          <SelectItem value="webp">WebP</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <Button
-                      onClick={handleExportImage}
-                      disabled={isExporting}
-                      aria-busy={isExporting}
-                      aria-label="Download screenshot snippet"
-                      variant="outline"
-                      className="h-9 w-full border-white/20 bg-white/10 text-sm hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isExporting
-                        ? "Exporting..."
-                        : exportStatus === "success"
-                          ? "Downloaded"
-                          : exportStatus === "error"
-                            ? "Failed"
-                            : "Download"}
-                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>

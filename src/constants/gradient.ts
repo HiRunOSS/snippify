@@ -813,7 +813,7 @@ export const ScreenshotSnippetBgCategories: ScreenshotBgCategory[] = [
       {
         name: "Mac Studio 1",
         gradient:
-          "center / cover no-repeat url('/backgrounds/macos/mac-bg-1.jpg')",
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-1.png')",
       },
       {
         name: "Mac Studio 2",
@@ -823,7 +823,7 @@ export const ScreenshotSnippetBgCategories: ScreenshotBgCategory[] = [
       {
         name: "Mac Studio 3",
         gradient:
-          "center / cover no-repeat url('/backgrounds/macos/mac-bg-3.png')",
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-3.jpg')",
       },
       {
         name: "Mac Studio 4",
@@ -833,47 +833,32 @@ export const ScreenshotSnippetBgCategories: ScreenshotBgCategory[] = [
       {
         name: "Mac Studio 5",
         gradient:
-          "center / cover no-repeat url('/backgrounds/macos/mac-bg-5.jpg')",
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-5.png')",
       },
       {
         name: "Mac Studio 6",
         gradient:
-          "center / cover no-repeat url('/backgrounds/macos/mac-bg-6.jpg')",
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-6.png')",
       },
       {
         name: "Mac Studio 7",
         gradient:
-          "center / cover no-repeat url('/backgrounds/macos/mac-bg-7.jpg')",
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-7.png')",
       },
       {
-        name: "Orange Horizon",
+        name: "Mac Studio 8",
         gradient:
-          "center / cover no-repeat url('/backgrounds/macos/macos-orange.svg')",
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-8.png')",
       },
       {
-        name: "Blue Coast",
+        name: "Mac Studio 9",
         gradient:
-          "center / cover no-repeat url('/backgrounds/macos/macos-blue.svg')",
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-9.png')",
       },
       {
-        name: "Golden Dusk",
+        name: "Mac Studio 10",
         gradient:
-          "center / cover no-repeat url('/backgrounds/macos/macos-gold.svg')",
-      },
-      {
-        name: "Forest Light",
-        gradient:
-          "center / cover no-repeat url('/backgrounds/macos/macos-forest.svg')",
-      },
-      {
-        name: "Violet Night",
-        gradient:
-          "center / cover no-repeat url('/backgrounds/macos/macos-violet.svg')",
-      },
-      {
-        name: "Rose Glow",
-        gradient:
-          "center / cover no-repeat url('/backgrounds/macos/macos-rose.svg')",
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-10.png')",
       },
     ],
   },
