@@ -1,8 +1,9 @@
+
 # Snippify - Free Code Snippet & Screenshot Generator
 
 An all-in-one tool to generate, customize, and share beautiful code and screenshot snippets.
 
-<img width="1230" height="748" alt="snippet (65)" src="https://github.com/user-attachments/assets/9d7f7803-c310-45db-bad7-ab3dd60d804c" />
+<img width="1800" height="1200" alt="snippet (16)" src="https://github.com/user-attachments/assets/08d65bc4-ab8b-469a-a835-33650896ba9d" />
 
 
 ## Two Powerful Tools in v2
