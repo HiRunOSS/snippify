@@ -3,7 +3,8 @@
 
 An all-in-one tool to generate, customize, and share beautiful code and screenshot snippets.
 
-<img width="1800" height="1200" alt="snippet (16)" src="https://github.com/user-attachments/assets/08d65bc4-ab8b-469a-a835-33650896ba9d" />
+<img width="3600" height="2025" alt="snippet (1)" src="https://github.com/user-attachments/assets/4f264520-9f43-4fb9-b638-31dbb8be2ebb" />
+
 
 
 ## Two Powerful Tools in v2
