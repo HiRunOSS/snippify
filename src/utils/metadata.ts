@@ -1,42 +1,58 @@
 import {Metadata} from "next";
+import {
+  DEFAULT_OG_IMAGE,
+  SCREENSHOT_OG_IMAGE,
+  SITE_NAME,
+  absoluteUrl,
+  coreKeywords,
+  defaultRobots,
+} from "@/utils/seo";
 
 export function generateEditorMetadata(): Metadata {
   return {
-    title:
-      "Code Snippet Editor v2 - Advanced Code Editor & Screenshot Generator | Snippify",
+    title: "Code Snippet Generator, Keyboard for Code & Screenshot Editor",
     description:
-      "Free online code editor with 50+ language support, syntax highlighting, 22+ themes, and professional screenshot generator. Create beautiful code snippet images instantly.",
+      "Use Snippify's free editor to generate code snippet images, create keyboard-style code screenshots, and polish screenshots with gradients, frames, shadows, and export controls.",
     keywords: [
-      "code editor",
-      "syntax highlighter",
+      ...coreKeywords,
       "code snippet editor",
+      "code editor",
+      "keyboard code generator",
       "screenshot generator",
-      "code beautifier",
+      "online screenshot editor",
       "code visualization",
-      "developer tools",
-      "code sharing",
     ],
+    alternates: {
+      canonical: "/editor",
+    },
     openGraph: {
       type: "website",
-      title: "Advanced Code Editor & Screenshot Generator - Snippify v2",
+      title: `Code Snippet Generator & Screenshot Editor - ${SITE_NAME}`,
       description:
-        "Powerful code editor with 50+ languages and professional screenshot tool. Create stunning code snippet images.",
-      url: "https://snippify.dev/editor",
+        "Create polished code snippet images and screenshots with syntax highlighting, themes, background gradients, frame controls, and one-click exports.",
+      url: absoluteUrl("/editor"),
       images: [
         {
-          url: "/preview.png",
-          width: 1200,
-          height: 630,
-          alt: "Snippify Code Editor - Advanced Code Snippet Generator",
+          url: DEFAULT_OG_IMAGE,
+          width: 1920,
+          height: 990,
+          alt: "Snippify code snippet generator editor preview",
+        },
+        {
+          url: SCREENSHOT_OG_IMAGE,
+          width: 1920,
+          height: 990,
+          alt: "Snippify screenshot editor preview",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Code Editor & Screenshot Generator - Snippify",
+      title: "Code Snippet Generator & Screenshot Editor - Snippify",
       description:
-        "Advanced code editor with 50+ languages and professional screenshot tool for creating beautiful code snippet images.",
-      images: ["/preview.png"],
+        "Generate shareable code screenshots and edit screenshots with Snippify's free online editor.",
+      images: [absoluteUrl(DEFAULT_OG_IMAGE)],
     },
+    robots: defaultRobots,
   };
 }
