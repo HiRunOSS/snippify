@@ -88,11 +88,11 @@ export default function CodeEditorFooter() {
   const codeLanguage = useEditorStore((state) => state.codeLanguage);
   const setCodeLanguage = useEditorStore((state) => state.setCodeLanguage);
   return (
-    <section className="fixed bottom-0 z-10 flex w-full justify-center">
-      <div className="mx-auto flex w-full max-w-7xl justify-center">
-        <div className="flex min-h-auto w-full flex-col items-center rounded-t-2xl border border-black/10 bg-white/20 px-2 py-2 text-black backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/80 dark:text-gray-100 sm:min-h-20 sm:px-6 sm:py-4">
-          <div className="flex w-full flex-wrap items-end justify-center gap-x-3 gap-y-3 lg:flex-nowrap lg:justify-between lg:gap-x-4">
-            <div className="w-20 space-y-1">
+    <section className="fixed inset-x-0 bottom-0 z-10 flex w-full justify-center">
+      <div className="mx-auto flex w-full max-w-7xl justify-center px-2 sm:px-0">
+        <div className="flex w-full flex-col items-center rounded-t-2xl border border-black/10 bg-white/30 px-2 py-2 text-black backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/85 dark:text-gray-100 sm:min-h-20 sm:px-6 sm:py-4">
+          <div className="scrollbar-hide flex w-full items-end justify-start gap-3 overflow-x-auto pb-1 lg:justify-between lg:overflow-visible">
+            <div className="w-20 shrink-0 space-y-1">
               <Label
                 className="text-xs text-gray-800 dark:text-gray-200/90"
                 htmlFor="gradient"
@@ -105,7 +105,7 @@ export default function CodeEditorFooter() {
                 onChange={setGradient}
               />
             </div>
-            <div className="relative flex w-28 flex-col space-y-1">
+            <div className="relative flex w-28 shrink-0 flex-col space-y-1">
               <Label
                 className="text-xs w-full text-gray-800 dark:text-gray-200/90"
                 htmlFor="removeBg"
@@ -133,7 +133,7 @@ export default function CodeEditorFooter() {
               </Select>
             </div>
 
-            <div className="relative flex w-28 flex-col space-y-1">
+            <div className="relative flex w-28 shrink-0 flex-col space-y-1">
               <Label
                 className="text-xs w-full text-gray-800 dark:text-gray-200/90"
                 htmlFor="lineNumbers"
@@ -161,7 +161,7 @@ export default function CodeEditorFooter() {
               </Select>
             </div>
 
-            <div className="relative flex w-36 flex-col space-y-1">
+            <div className="relative flex w-36 shrink-0 flex-col space-y-1">
               <Label
                 className="text-xs w-full text-gray-800 dark:text-gray-200/90"
                 htmlFor="codeLanguage"
@@ -192,7 +192,7 @@ export default function CodeEditorFooter() {
               </Select>
             </div>
 
-            <div className="relative flex w-40 flex-col space-y-1">
+            <div className="relative flex w-40 shrink-0 flex-col space-y-1">
               <Label
                 className="text-xs w-full text-gray-800 dark:text-gray-200/90"
                 htmlFor="codeTheme"
@@ -227,7 +227,7 @@ export default function CodeEditorFooter() {
               </Select>
             </div>
 
-            <div className="relative flex w-28 flex-col space-y-1">
+            <div className="relative flex w-28 shrink-0 flex-col space-y-1">
               <Label
                 className="text-xs w-full text-gray-800 dark:text-gray-200/90"
                 htmlFor="codeWindowStyle"
@@ -266,7 +266,7 @@ export default function CodeEditorFooter() {
               </Select>
             </div>
 
-            <div className="w-24 space-y-1">
+            <div className="w-24 shrink-0 space-y-1">
               <Label
                 className="text-xs text-gray-800 dark:text-gray-200/90"
                 htmlFor="fontSize"
@@ -283,7 +283,7 @@ export default function CodeEditorFooter() {
                 className="h-7 w-full border-black/30 bg-white/80 text-center text-xs [color-scheme:dark] dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
               />
             </div>
-            <div className="w-24 space-y-1">
+            <div className="w-24 shrink-0 space-y-1">
               <Label
                 className="text-xs text-gray-800 dark:text-gray-200/90"
                 htmlFor="snippetPadding"

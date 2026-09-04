@@ -160,79 +160,84 @@ export default function EditorPageClient() {
   };
 
   return (
-    <div className="h-screen bg-gradient-to-b from-white via-white to-gray-50 dark:from-[#111010] dark:via-[#111010] dark:to-[#111010] flex flex-col overflow-hidden">
-      <div className="fixed left-4 top-4 z-20 flex items-center gap-1.5 rounded-xl border border-black/10 bg-white/25 p-1 text-gray-900 shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/55 dark:text-white sm:left-6 sm:top-6">
-        <a
-          href={X_PROFILE_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-lg px-2.5 py-1.5 text-xs font-semibold leading-none text-gray-800 transition-colors hover:bg-black/5 hover:text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:text-white/85 dark:hover:bg-white/10 dark:hover:text-white"
-        >
-          Made by Arun
-        </a>
-        <a
-          href={GITHUB_REPO_URL}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Star Snippify on GitHub"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold leading-none tabular-nums text-gray-700 transition-colors hover:bg-black/5 hover:text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white"
-        >
-          <FaGithub className="h-3.5 w-3.5 text-gray-500 dark:text-white/55" />
-          {stars === null ? (
-            <span
-              className="h-3 w-3 rounded-full border-2 border-gray-400 border-t-transparent animate-spin dark:border-white/45 dark:border-t-transparent"
-              aria-hidden="true"
-            />
-          ) : (
-            <span>{displayStars.toLocaleString()}</span>
-          )}
-        </a>
-      </div>
-      <div className="fixed left-1/2 top-4 z-20 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl bg-white/30 p-2 backdrop-blur-2xl dark:bg-[#111010]/60 sm:top-6">
-        <div className="flex w-full items-center justify-center">
-          <Button
-            type="button"
-            aria-pressed={editorMode === "code"}
-            variant="ghost"
-            className={`h-9 flex-1 rounded-xl border transition-colors hover:border-white hover:bg-white hover:text-black ${
-              editorMode === "code"
-                ? "border-white bg-white text-black shadow-sm"
-                : "border-transparent text-white hover:shadow-sm"
-            }`}
-            onClick={() => setEditorMode("code")}
-          >
-            Code
-          </Button>
-          <Button
-            type="button"
-            aria-pressed={editorMode === "screenshot"}
-            variant="ghost"
-            className={`h-9 flex-1 rounded-xl border transition-colors hover:border-white hover:bg-white hover:text-black ${
-              editorMode === "screenshot"
-                ? "border-white bg-white text-black shadow-sm"
-                : "border-transparent text-white hover:shadow-sm"
-            }`}
-            onClick={() => setEditorMode("screenshot")}
-          >
-            Screenshot
-          </Button>
-        </div>
-      </div>
-      <div className="fixed right-4 top-4 z-20 flex items-center gap-1.5 rounded-xl border border-black/10 bg-white/25 p-0.5 text-gray-900 shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/55 dark:text-white sm:right-6 sm:top-6">
-        {editorMode === "screenshot" && uploadedImage ? (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setUploadedImage("")}
-            aria-label="Remove screenshot"
-            title="Remove screenshot"
-            className="h-8 w-8 rounded-lg px-0 text-gray-700 hover:bg-black/5 hover:text-black dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        ) : null}
+    <div className="flex h-dvh flex-col overflow-hidden bg-gradient-to-b from-white via-white to-gray-50 dark:from-[#111010] dark:via-[#111010] dark:to-[#111010]">
+      <header className="fixed inset-x-0 top-3 z-20 px-3 sm:top-6 sm:px-6">
+        <div className="mx-auto grid w-full grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-start sm:gap-20 lg:gap-32 xl:gap-44">
+          <div className="order-3 col-span-2 rounded-2xl bg-white/40 p-2 backdrop-blur-2xl dark:bg-[#111010]/70 sm:order-none sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:w-[min(460px,32vw)] xl:w-[min(560px,34vw)]">
+            <div className="flex w-full items-center justify-center">
+              <Button
+                type="button"
+                aria-pressed={editorMode === "screenshot"}
+                variant="ghost"
+                className={`h-9 flex-1 rounded-xl border text-sm transition-colors hover:border-white hover:bg-white hover:text-black ${
+                  editorMode === "screenshot"
+                    ? "border-white bg-white text-black shadow-sm"
+                    : "border-transparent text-gray-800 hover:shadow-sm dark:text-white"
+                }`}
+                onClick={() => setEditorMode("screenshot")}
+              >
+                Screenshot
+              </Button>
+              <Button
+                type="button"
+                aria-pressed={editorMode === "code"}
+                variant="ghost"
+                className={`h-9 flex-1 rounded-xl border text-sm transition-colors hover:border-white hover:bg-white hover:text-black ${
+                  editorMode === "code"
+                    ? "border-white bg-white text-black shadow-sm"
+                    : "border-transparent text-gray-800 hover:shadow-sm dark:text-white"
+                }`}
+                onClick={() => setEditorMode("code")}
+              >
+                Code
+              </Button>
+            </div>
+          </div>
 
-        <Dialog>
+          <div className="contents sm:col-start-3 sm:row-start-1 sm:flex sm:justify-end sm:gap-3">
+            <div className="flex w-fit items-center gap-1.5 rounded-xl border border-black/10 bg-white/35 p-1 text-gray-900 shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/65 dark:text-white sm:order-2">
+              <a
+                href={GITHUB_REPO_URL}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Star Snippify on GitHub"
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold leading-none tabular-nums text-gray-700 transition-colors hover:bg-black/5 hover:text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                <FaGithub className="h-3.5 w-3.5 text-gray-500 dark:text-white/55" />
+                {stars === null ? (
+                  <span
+                    className="h-3 w-3 rounded-full border-2 border-gray-400 border-t-transparent animate-spin dark:border-white/45 dark:border-t-transparent"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <span>{displayStars.toLocaleString()}</span>
+                )}
+              </a>
+              <a
+                href={X_PROFILE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="min-w-[108px] rounded-lg px-3 py-1.5 text-center text-xs font-semibold leading-none text-gray-800 transition-colors hover:bg-black/5 hover:text-black focus:outline-none focus:ring-1 focus:ring-blue-400 dark:text-white/85 dark:hover:bg-white/10 dark:hover:text-white"
+              >
+                Made by Arun
+              </a>
+            </div>
+
+            <div className="ml-auto flex w-fit items-center gap-1.5 rounded-xl border border-black/10 bg-white/35 p-0.5 text-gray-900 shadow-sm backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/65 dark:text-white sm:order-1 sm:ml-0">
+              {editorMode === "screenshot" && uploadedImage ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setUploadedImage("")}
+                  aria-label="Remove screenshot"
+                  title="Remove screenshot"
+                  className="h-8 w-8 rounded-lg px-0 text-gray-700 hover:bg-black/5 hover:text-black dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              ) : null}
+
+              <Dialog>
           <DialogTrigger asChild>
             <Button
               type="button"
@@ -357,11 +362,14 @@ export default function EditorPageClient() {
               </div>
             )}
           </DialogContent>
-        </Dialog>
-      </div>
+              </Dialog>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <main className="flex-1 flex items-center justify-center w-full overflow-hidden px-4 pb-28 pt-24 sm:pb-32 sm:pt-28">
-        <div className="h-full w-full max-w-7xl rounded-3xl bg-white/20 backdrop-blur-2xl dark:bg-[#111010]/70 flex items-center justify-center overflow-hidden">
+      <main className="flex min-h-0 flex-1 items-center justify-center overflow-auto px-3 pb-28 pt-32 sm:px-4 sm:pb-32 sm:pt-28">
+        <div className="flex h-full w-full max-w-7xl items-center justify-center overflow-hidden rounded-2xl bg-white/20 backdrop-blur-2xl dark:bg-[#111010]/70 sm:rounded-3xl">
           {editorMode === "code" ? (
             <CodeSnippet />
           ) : (
