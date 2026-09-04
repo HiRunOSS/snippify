@@ -23,6 +23,7 @@ export type CodeWindowStyle = "plain" | "macos" | "windows";
 
 export interface ScreenshotSettings {
   borderStyle: "sharp" | "curved" | "round";
+  cornerRadius: number;
   borderWidth: number;
   imageScale: number;
   backgroundBlur: number;
@@ -34,7 +35,11 @@ export interface ScreenshotSettings {
     | "glass-light"
     | "glass-dark"
     | "border"
-    | "border-dark";
+    | "border-dark"
+    | "dashed"
+    | "dotted"
+    | "long-dash"
+    | "guide";
 }
 
 type ScreenshotFrameStyle = ScreenshotSettings["frameStyle"];
@@ -136,13 +141,14 @@ const PREVIOUS_MACOS_DEFAULT_GRADIENT =
 const PREVIOUS_PREMIUM_DEFAULT_GRADIENT =
   "radial-gradient(circle at 18% 12%, rgba(98, 224, 213, 0.92) 0%, rgba(42, 149, 151, 0.96) 38%, rgba(34, 40, 68, 1) 100%)";
 const DEFAULT_SCREENSHOT_GRADIENT =
-  "center / cover no-repeat url('/backgrounds/macos/mac-bg-4.jpg')";
+  "center / cover no-repeat url('/backgrounds/macos/mac-bg-2.jpg')";
 const STORAGE_KEY = "snippify-editor-state";
 const CODE_SAVE_DEBOUNCE_MS = 250;
 const MAX_PERSISTED_IMAGE_SIZE_BYTES = 12 * 1024 * 1024;
 
 const DEFAULT_SCREENSHOT_SETTINGS: ScreenshotSettings = {
   borderStyle: "curved",
+  cornerRadius: 16,
   borderWidth: 4,
   imageScale: 100,
   backgroundBlur: 0,
@@ -163,12 +169,20 @@ const normalizeFrameStyle = (value: unknown): ScreenshotFrameStyle => {
     return "border";
   }
 
+  if (value === "pink-sticker") {
+    return "dashed";
+  }
+
   if (
     value === "default" ||
     value === "glass-light" ||
     value === "glass-dark" ||
     value === "border" ||
-    value === "border-dark"
+    value === "border-dark" ||
+    value === "dashed" ||
+    value === "dotted" ||
+    value === "long-dash" ||
+    value === "guide"
   ) {
     return value;
   }
@@ -180,6 +194,7 @@ const normalizeScreenshotSettings = (
   settings?: Partial<ScreenshotSettings>,
 ): ScreenshotSettings => {
   const rawBorderWidth = Number(settings?.borderWidth);
+  const rawCornerRadius = Number(settings?.cornerRadius);
   const rawImageScale = Number(settings?.imageScale);
   const rawBackgroundBlur = Number(settings?.backgroundBlur);
   const imageScale =
@@ -193,6 +208,19 @@ const normalizeScreenshotSettings = (
     borderWidth: Number.isFinite(rawBorderWidth)
       ? Math.max(0, Math.min(24, rawBorderWidth))
       : DEFAULT_SCREENSHOT_SETTINGS.borderWidth,
+    cornerRadius: Number.isFinite(rawCornerRadius)
+      ? Math.max(0, Math.min(64, rawCornerRadius))
+      : (() => {
+          switch (settings?.borderStyle) {
+            case "sharp":
+              return 0;
+            case "round":
+              return 28;
+            case "curved":
+            default:
+              return DEFAULT_SCREENSHOT_SETTINGS.cornerRadius;
+          }
+        })(),
     imageScale,
     backgroundBlur: Number.isFinite(rawBackgroundBlur)
       ? Math.max(0, Math.min(24, rawBackgroundBlur))
