@@ -4,6 +4,7 @@ import {useState} from "react";
 import {Button} from "../ui/button";
 import {Input} from "../ui/input";
 import {Label} from "../ui/label";
+import {Check, ChevronDown} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -54,6 +55,27 @@ const clampImageScale = (value: number) => {
   return Number.isFinite(value) && value >= 50 && value <= 150 ? value : 100;
 };
 
+const clampCornerRadius = (value: number) => {
+  return Number.isFinite(value) ? Math.max(0, Math.min(64, value)) : 16;
+};
+
+const CORNER_PRESETS: Array<{
+  label: string;
+  value: "sharp" | "curved" | "round";
+  radius: number;
+}> = [
+  {label: "Sharp", value: "sharp", radius: 0},
+  {label: "Curved", value: "curved", radius: 16},
+  {label: "Round", value: "round", radius: 28},
+];
+
+const getCornerLabel = (radius: number) => {
+  return (
+    CORNER_PRESETS.find((preset) => preset.radius === radius)?.label ??
+    `${radius}px`
+  );
+};
+
 export default function ScreenshotEditorFooter({
   settings,
   onSettingsChange,
@@ -62,8 +84,10 @@ export default function ScreenshotEditorFooter({
   const setGradient = useEditorStore((state) => state.setScreenshotGradient);
 
   const [isSizeDialogOpen, setIsSizeDialogOpen] = useState(false);
+  const [isCornerOpen, setIsCornerOpen] = useState(false);
   const hasVisibleFrame = settings.frameStyle !== "default";
   const safeImageScale = clampImageScale(settings.imageScale);
+  const safeCornerRadius = clampCornerRadius(settings.cornerRadius);
 
   return (
     <section className="fixed bottom-0 z-10 flex w-full justify-center">
@@ -133,31 +157,114 @@ export default function ScreenshotEditorFooter({
               />
             </div>
 
-            <div className="w-32 space-y-1">
+            <div className="w-36 space-y-1">
               <Label
-                htmlFor="screenshot-border"
+                htmlFor="screenshot-corner-trigger"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
               >
                 Corner
               </Label>
-              <Select
-                value={settings.borderStyle}
-                onValueChange={(value: "sharp" | "curved" | "round") =>
-                  onSettingsChange({...settings, borderStyle: value})
-                }
-              >
-                <SelectTrigger
-                  id="screenshot-border"
-                  className="h-7 w-full border-black/30 bg-white/80 text-xs dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
+              <div className="relative">
+                <button
+                  id="screenshot-corner-trigger"
+                  type="button"
+                  aria-haspopup="dialog"
+                  aria-expanded={isCornerOpen}
+                  onClick={() => setIsCornerOpen((open) => !open)}
+                  className="flex h-7 w-full items-center justify-between rounded-md border border-black/30 bg-white/80 px-3 text-xs font-medium text-gray-900 dark:border-white/15 dark:bg-[#111010]/80 dark:text-gray-100"
                 >
-                  <SelectValue placeholder="Round" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sharp">Sharp</SelectItem>
-                  <SelectItem value="curved">Curved</SelectItem>
-                  <SelectItem value="round">Round</SelectItem>
-                </SelectContent>
-              </Select>
+                  <span>{getCornerLabel(safeCornerRadius)}</span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 text-gray-500 transition-transform dark:text-gray-300 ${
+                      isCornerOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isCornerOpen ? (
+                  <div className="absolute bottom-full left-0 z-30 mb-2 w-64 rounded-lg border border-black/10 bg-white p-3 shadow-2xl shadow-black/20 dark:border-white/10 dark:bg-[#111010] dark:shadow-black/60">
+                    <div className="grid grid-cols-3 gap-3">
+                      {CORNER_PRESETS.map((preset) => {
+                        const isActive = safeCornerRadius === preset.radius;
+
+                        return (
+                          <button
+                            key={preset.value}
+                            type="button"
+                            aria-pressed={isActive}
+                            onClick={() => {
+                              onSettingsChange({
+                                ...settings,
+                                borderStyle: preset.value,
+                                cornerRadius: preset.radius,
+                              });
+                              setIsCornerOpen(false);
+                            }}
+                            className={`rounded-md p-1.5 text-center transition ${
+                              isActive
+                                ? "bg-gray-950 text-white ring-1 ring-gray-950 dark:bg-white dark:text-black dark:ring-white"
+                                : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
+                            }`}
+                          >
+                            <span className="relative mx-auto mb-2 flex h-12 w-12 items-center justify-center">
+                              <span className="absolute left-0 top-0 h-10 w-10 rounded-sm bg-gray-300 dark:bg-white/25" />
+                              <span
+                                className={`relative h-10 w-10 border ${
+                                  isActive
+                                    ? "border-white/75 bg-white dark:border-black/60 dark:bg-black/5"
+                                    : "border-gray-300 bg-white dark:border-white/25 dark:bg-white/95"
+                                }`}
+                                style={{
+                                  borderRadius: `${preset.radius}px`,
+                                }}
+                              />
+                              {isActive ? (
+                                <Check className="absolute right-0 top-0 h-3.5 w-3.5 rounded-full bg-white text-black dark:bg-black dark:text-white" />
+                              ) : null}
+                            </span>
+                            <span className="text-[11px]">{preset.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-gray-700 dark:text-gray-200">
+                          Custom
+                        </span>
+                        <span className="text-xs tabular-nums text-gray-500 dark:text-gray-400">
+                          {safeCornerRadius}px
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={64}
+                        step={1}
+                        value={safeCornerRadius}
+                        aria-label="Custom corner radius"
+                        onChange={(e) => {
+                          const nextRadius = clampCornerRadius(
+                            Number(e.target.value),
+                          );
+                          const matchingPreset = CORNER_PRESETS.find(
+                            (preset) => preset.radius === nextRadius,
+                          );
+
+                          onSettingsChange({
+                            ...settings,
+                            borderStyle:
+                              matchingPreset?.value ?? settings.borderStyle,
+                            cornerRadius: nextRadius,
+                          });
+                        }}
+                        className="h-1.5 w-full accent-gray-950 dark:accent-gray-100"
+                      />
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <div className="w-36 space-y-1">
@@ -175,7 +282,11 @@ export default function ScreenshotEditorFooter({
                     | "glass-light"
                     | "glass-dark"
                     | "border"
-                    | "border-dark",
+                    | "border-dark"
+                    | "dashed"
+                    | "dotted"
+                    | "long-dash"
+                    | "guide",
                 ) => onSettingsChange({...settings, frameStyle: value})}
               >
                 <SelectTrigger
@@ -190,6 +301,10 @@ export default function ScreenshotEditorFooter({
                   <SelectItem value="glass-dark">Glass Dark</SelectItem>
                   <SelectItem value="border">Border</SelectItem>
                   <SelectItem value="border-dark">Border Dark</SelectItem>
+                  <SelectItem value="dashed">Dashed</SelectItem>
+                  <SelectItem value="dotted">Dotted</SelectItem>
+                  <SelectItem value="long-dash">Long Dash</SelectItem>
+                  <SelectItem value="guide">Guide</SelectItem>
                 </SelectContent>
               </Select>
             </div>

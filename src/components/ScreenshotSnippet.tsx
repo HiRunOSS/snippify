@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type FormEvent,
 } from "react";
 import {useDropzone, type FileRejection} from "react-dropzone";
 import {
@@ -54,7 +55,13 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
   const setPreviewRef = useEditorStore((state) => state.setPreviewRef);
   const uploadedImage = useEditorStore((state) => state.uploadedImage);
   const setUploadedImage = useEditorStore((state) => state.setUploadedImage);
+  const setScreenshotSettings = useEditorStore(
+    (state) => state.setScreenshotSettings,
+  );
   const previewViewportRef = useRef<HTMLElement | null>(null);
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [websiteCaptureError, setWebsiteCaptureError] = useState("");
+  const [isCapturingWebsite, setIsCapturingWebsite] = useState(false);
   const [previewWidth, setPreviewWidth] = useState(MAX_PREVIEW_WIDTH_PX);
   const imageSrc = uploadedImage;
   const safeImageScale = Math.max(50, Math.min(settings.imageScale, 150));
@@ -69,12 +76,7 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
     ASPECT_RATIO_NUMBER_MAP[settings.aspectRatio] ??
     ASPECT_RATIO_NUMBER_MAP["16:9"];
 
-  const borderRadiusMap = {
-    sharp: 0,
-    curved: 16,
-    round: 28,
-  };
-  const borderRadius = borderRadiusMap[settings.borderStyle];
+  const borderRadius = Math.max(0, Math.min(64, settings.cornerRadius));
   const hasVisibleFrame = settings.frameStyle !== "default";
   const isSolidBorderFrame =
     settings.frameStyle === "border" || settings.frameStyle === "border-dark";
@@ -120,6 +122,34 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
           border: "none",
           backgroundColor: "rgb(26, 26, 26)",
         };
+      case "dashed":
+        return {
+          padding: "0px",
+          border: `${safeBorderWidthPx}px dashed rgba(255, 255, 255, 0.46)`,
+          backgroundColor: "transparent",
+        };
+      case "dotted":
+        return {
+          padding: "0px",
+          border: `${safeBorderWidthPx}px dotted rgba(255, 255, 255, 0.58)`,
+          backgroundColor: "transparent",
+        };
+      case "long-dash":
+        return {
+          padding: "0px",
+          border: `${safeBorderWidthPx}px dashed rgba(226, 232, 240, 0.68)`,
+          backgroundColor: "transparent",
+          outline: "1px solid rgba(15, 23, 42, 0.2)",
+          outlineOffset: `${Math.max(4, safeBorderWidthPx + 2)}px`,
+        };
+      case "guide":
+        return {
+          padding: "0px",
+          border: `${Math.max(1, safeBorderWidthPx)}px dashed rgba(148, 163, 184, 0.82)`,
+          backgroundColor: "transparent",
+          boxShadow:
+            "0 0 0 6px rgba(15, 23, 42, 0.16), 0 0 0 7px rgba(226, 232, 240, 0.36)",
+        };
       case "default":
       default:
         return {
@@ -163,6 +193,10 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
     switch (settings.frameStyle) {
       case "glass-light":
       case "glass-dark":
+      case "dashed":
+      case "dotted":
+      case "long-dash":
+      case "guide":
         return safeBorderWidthPx;
       case "border":
       case "border-dark":
@@ -225,6 +259,78 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
     },
     [setUploadedImage],
   );
+
+  const importImageBlob = useCallback(
+    (blob: Blob) => {
+      return new Promise<void>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setUploadedImage(reader.result as string);
+          resolve();
+        };
+        reader.onerror = () => {
+          reject(new Error("Unable to read captured screenshot."));
+        };
+        reader.readAsDataURL(blob);
+      });
+    },
+    [setUploadedImage],
+  );
+
+  const normalizeWebsiteUrl = (rawUrl: string) => {
+    const trimmedUrl = rawUrl.trim();
+    if (!trimmedUrl) {
+      return "";
+    }
+
+    return /^https?:\/\//i.test(trimmedUrl)
+      ? trimmedUrl
+      : `https://${trimmedUrl}`;
+  };
+
+  const handleWebsiteCapture = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const normalizedUrl = normalizeWebsiteUrl(websiteUrl);
+    if (!normalizedUrl) {
+      setWebsiteCaptureError("Enter a website URL.");
+      return;
+    }
+
+    setIsCapturingWebsite(true);
+    setWebsiteCaptureError("");
+
+    try {
+      const response = await fetch(
+        `/api/website-screenshot?url=${encodeURIComponent(normalizedUrl)}`,
+      );
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as
+          | {error?: string}
+          | null;
+        throw new Error(payload?.error ?? "Could not capture this website.");
+      }
+
+      const blob = await response.blob();
+      await importImageBlob(blob);
+      setScreenshotSettings({
+        ...settings,
+        aspectRatio: "16:9",
+        imageScale: 100,
+        layoutPreset: DEFAULT_LAYOUT_PRESET,
+      });
+      setWebsiteUrl("");
+    } catch (error) {
+      setWebsiteCaptureError(
+        error instanceof Error
+          ? error.message
+          : "Could not capture this website.",
+      );
+    } finally {
+      setIsCapturingWebsite(false);
+    }
+  };
 
   const handleDropAccepted = useCallback(
     (acceptedFiles: File[]) => {
@@ -319,11 +425,18 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
         className="relative mx-auto box-border overflow-hidden rounded-lg"
         style={{
           aspectRatio: aspectRatioValue,
-          background: gradient,
+          backgroundColor: "#111010",
           padding: BACKGROUND_PADDING,
           width: `${previewWidth}px`,
         }}
       >
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{
+            background: gradient,
+          }}
+        />
         {safeBackgroundBlur > 0 ? (
           <div
             aria-hidden="true"
@@ -356,40 +469,35 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
             }}
           >
             {imageSrc ? (
-              <div
-                className="relative inline-flex items-center justify-center overflow-hidden"
-                data-layout-effect="true"
-                data-layout-preset={settings.layoutPreset}
-                data-image-scale={safeImageScale}
-                data-shadow-style={settings.shadowStyle}
-                data-frame-style={settings.frameStyle}
-                style={{
-                  borderRadius: `${frameRadius}px`,
-                  maxWidth: "100%",
-                  maxHeight: "100%",
-                  boxSizing: "border-box",
-                  transition:
-                    "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), filter 260ms cubic-bezier(0.22, 1, 0.36, 1)",
-                  ...getLayoutPresetStyles(),
-                  ...getScreenshotShadowStyles(),
-                  ...getScreenshotWrapperStyles(),
-                }}
-              >
+              <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={imageSrc}
                   alt="Screenshot preview"
                   className="block"
+                  data-layout-effect="true"
+                  data-layout-preset={settings.layoutPreset}
+                  data-image-scale={safeImageScale}
+                  data-shadow-style={settings.shadowStyle}
+                  data-frame-style={settings.frameStyle}
                   style={{
                     borderRadius: `${innerImageRadiusPx}px`,
+                    boxSizing: "border-box",
                     height: "auto",
                     imageRendering: "auto",
                     maxHeight: "100%",
                     maxWidth: "100%",
+                    objectFit: "contain",
+                    objectPosition: "center",
+                    transition:
+                      "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), filter 260ms cubic-bezier(0.22, 1, 0.36, 1)",
                     width: "auto",
+                    ...getLayoutPresetStyles(),
+                    ...getScreenshotShadowStyles(),
+                    ...getScreenshotWrapperStyles(),
                   }}
                 />
-              </div>
+              </>
             ) : (
               <div
                 className="relative flex h-full w-full items-center justify-center overflow-hidden"
@@ -413,13 +521,45 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
                     {isDragActive ? "Drop image here" : "Add screenshot"}
                   </p>
                   <p className="mt-1 text-sm text-white/80">
-                    Drop an image, paste one, or browse from your device.
+                    Drop an image, paste one, browse, or capture a website.
                   </p>
+
+                  <form
+                    className="mt-5 flex w-full flex-col gap-2 sm:flex-row"
+                    onSubmit={handleWebsiteCapture}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <input
+                      type="text"
+                      inputMode="url"
+                      value={websiteUrl}
+                      onChange={(event) => {
+                        setWebsiteUrl(event.target.value);
+                        setWebsiteCaptureError("");
+                      }}
+                      placeholder="https://example.com"
+                      aria-label="Website URL"
+                      className="h-10 min-w-0 flex-1 rounded-lg border border-white/25 bg-black/25 px-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-white/60 focus:ring-2 focus:ring-white/20"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isCapturingWebsite}
+                      className="h-10 rounded-lg border border-white/30 bg-white/15 px-4 text-sm font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isCapturingWebsite ? "Capturing..." : "Capture"}
+                    </button>
+                  </form>
+
+                  {websiteCaptureError ? (
+                    <p className="mt-2 text-xs font-medium text-red-100">
+                      {websiteCaptureError}
+                    </p>
+                  ) : null}
 
                   <button
                     type="button"
                     onClick={open}
-                    className="mt-5 inline-flex h-9 items-center rounded-lg border border-white/30 bg-white/10 px-4 text-sm font-medium text-white/95 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+                    className="mt-4 inline-flex h-9 items-center rounded-lg border border-white/30 bg-white/10 px-4 text-sm font-medium text-white/95 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
                   >
                     Choose file
                   </button>

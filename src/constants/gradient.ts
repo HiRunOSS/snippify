@@ -860,6 +860,26 @@ export const ScreenshotSnippetBgCategories: ScreenshotBgCategory[] = [
         gradient:
           "center / cover no-repeat url('/backgrounds/macos/mac-bg-10.png')",
       },
+      {
+        name: "Mac Studio 11",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-11.jpeg')",
+      },
+      {
+        name: "Mac Studio 12",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-12.jpeg')",
+      },
+      {
+        name: "Mac Studio 13",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-13.jpg')",
+      },
+      {
+        name: "Mac Studio 14",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/macos/mac-bg-14.jpg')",
+      },
     ],
   },
   {
@@ -929,29 +949,161 @@ export const ScreenshotSnippetBgCategories: ScreenshotBgCategory[] = [
     label: "Radiant",
     options: [
       {
-        name: "Sun",
+        name: "Radiant 1",
         gradient:
-          "center / cover no-repeat url('/backgrounds/radiant/radiant-sun.svg')",
+          "center / cover no-repeat url('/backgrounds/radiant/radiant1.jpg')",
       },
       {
-        name: "Rose",
+        name: "Radiant 2",
         gradient:
-          "center / cover no-repeat url('/backgrounds/radiant/radiant-rose.svg')",
+          "center / cover no-repeat url('/backgrounds/radiant/radiant2.jpg')",
       },
       {
-        name: "Cyan",
+        name: "Radiant 4",
         gradient:
-          "center / cover no-repeat url('/backgrounds/radiant/radiant-cyan.svg')",
+          "center / cover no-repeat url('/backgrounds/radiant/radiant4.jpg')",
       },
       {
-        name: "Indigo",
+        name: "Radiant 5",
         gradient:
-          "center / cover no-repeat url('/backgrounds/radiant/radiant-indigo.svg')",
+          "center / cover no-repeat url('/backgrounds/radiant/radiant5.jpg')",
       },
       {
-        name: "Coral",
+        name: "Radiant 6",
         gradient:
-          "center / cover no-repeat url('/backgrounds/radiant/radiant-coral.svg')",
+          "center / cover no-repeat url('/backgrounds/radiant/radiant6.jpg')",
+      },
+      {
+        name: "Radiant 7",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/radiant/radiant7.avif')",
+      },
+      {
+        name: "Radiant 8",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/radiant/radiant8.jpg')",
+      },
+      {
+        name: "Radiant 9",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/radiant/radiant9.jpg')",
+      },
+      {
+        name: "Radiant 10",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/radiant/radiant10.jpg')",
+      },
+      {
+        name: "Radiant 11",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/radiant/radiant11.svg')",
+      },
+      {
+        name: "Radiant 12",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/radiant/radiant12.svg')",
+      },
+      {
+        name: "Radiant 13",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/radiant/radiant13.svg')",
+      },
+      {
+        name: "Radiant 14",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/radiant/radiant14.svg')",
+      },
+      {
+        name: "Radiant 15",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/radiant/radiant15.svg')",
+      },
+    ],
+  },
+  {
+    id: "mesh",
+    label: "Mesh",
+    options: [
+      {
+        name: "Mesh 1",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/mesh-bg/mesh1.webp')",
+      },
+      {
+        name: "Mesh 2",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/mesh-bg/mesh2.webp')",
+      },
+      {
+        name: "Mesh 3",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/mesh-bg/mesh3.webp')",
+      },
+      {
+        name: "Mesh 4",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/mesh-bg/mesh4.webp')",
+      },
+      {
+        name: "Mesh 5",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/mesh-bg/mesh5.webp')",
+      },
+      {
+        name: "Mesh 6",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/mesh-bg/mesh6.webp')",
+      },
+      {
+        name: "Mesh 7",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/mesh-bg/mesh7.webp')",
+      },
+      {
+        name: "Mesh 8",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/mesh-bg/mesh8.webp')",
+      },
+    ],
+  },
+  {
+    id: "pattern",
+    label: "Pattern",
+    options: [
+      {
+        name: "Pattern 1",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/pattern-bg/pattern1.webp')",
+      },
+      {
+        name: "Pattern 2",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/pattern-bg/pattern2.webp')",
+      },
+      {
+        name: "Pattern 3",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/pattern-bg/pattern3.webp')",
+      },
+      {
+        name: "Pattern 4",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/pattern-bg/pattern4.webp')",
+      },
+      {
+        name: "Pattern 5",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/pattern-bg/pattern5.webp')",
+      },
+      {
+        name: "Pattern 6",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/pattern-bg/pattern6.webp')",
+      },
+      {
+        name: "Pattern 7",
+        gradient:
+          "center / cover no-repeat url('/backgrounds/pattern-bg/pattern7.webp')",
       },
     ],
   },
