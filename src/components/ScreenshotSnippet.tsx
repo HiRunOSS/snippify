@@ -46,7 +46,7 @@ const ASPECT_RATIO_NUMBER_MAP: Record<ScreenshotAspectRatio, number> = {
   "9:16": 9 / 16,
 };
 
-const BACKGROUND_PADDING = "clamp(28px, 4.5vw, 64px)";
+const BACKGROUND_PADDING = "clamp(16px, 4.5vw, 64px)";
 const MAX_PREVIEW_WIDTH_PX = 1200;
 const MAX_IMAGE_SIZE_BYTES = 12 * 1024 * 1024;
 
@@ -417,7 +417,7 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
   return (
     <section
       ref={previewViewportRef}
-      className="flex h-full w-full flex-col items-center justify-center gap-5 px-1 sm:gap-6"
+      className="flex h-full min-h-[300px] w-full flex-col items-center justify-center gap-5 px-1 sm:gap-6"
     >
       <div
         ref={setPreviewRef}
@@ -507,25 +507,30 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
               >
                 <div
                   data-export-ignore="true"
-                  className={`relative z-10 flex w-[88%] max-w-[560px] flex-col items-center rounded-2xl border px-5 py-6 text-center text-white shadow-[0_18px_50px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 sm:px-7 sm:py-7 ${
+                  className={`relative z-10 flex w-[78%] max-w-[340px] flex-col items-center rounded-xl border px-3 py-1.5 text-center text-white shadow-[0_18px_50px_rgba(0,0,0,0.32)] backdrop-blur-2xl transition-all duration-200 sm:max-h-[calc(100%-4px)] sm:w-[88%] sm:max-w-[560px] sm:overflow-hidden sm:rounded-2xl sm:px-7 sm:py-5 ${
                     isDragActive
                       ? "scale-[1.01] border-cyan-200/80 bg-white/25"
                       : "border-white/25 bg-black/35"
                   }`}
                 >
-                  <span className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-white/40 bg-white/15 text-4xl leading-none text-white/95 shadow-inner">
+                  <button
+                    type="button"
+                    onClick={open}
+                    aria-label="Choose screenshot file"
+                    className="mb-4 hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/40 bg-white/15 text-4xl font-semibold leading-none text-white/95 shadow-inner transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/60 sm:inline-flex"
+                  >
                     +
-                  </span>
+                  </button>
 
-                  <p className="text-xl font-semibold tracking-tight text-white/95">
+                  <p className="text-[13px] font-semibold leading-4 tracking-tight text-white/95 sm:text-xl sm:leading-normal">
                     {isDragActive ? "Drop image here" : "Add screenshot"}
                   </p>
-                  <p className="mt-1 text-sm text-white/80">
+                  <p className="mt-0.5 max-w-[230px] text-[10px] leading-3 text-white/80 sm:mt-1 sm:max-w-none sm:text-sm sm:leading-5">
                     Drop an image, paste one, browse, or capture a website.
                   </p>
 
                   <form
-                    className="mt-5 flex w-full flex-col gap-2 sm:flex-row"
+                    className="mt-1 flex w-full flex-col gap-1 sm:mt-4 sm:gap-2 sm:flex-row"
                     onSubmit={handleWebsiteCapture}
                     onClick={(event) => event.stopPropagation()}
                   >
@@ -539,12 +544,12 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
                       }}
                       placeholder="https://example.com"
                       aria-label="Website URL"
-                      className="h-10 min-w-0 flex-1 rounded-lg border border-white/25 bg-black/25 px-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-white/60 focus:ring-2 focus:ring-white/20"
+                      className="box-border h-6 min-h-6 min-w-0 flex-1 appearance-none rounded-md border border-white/25 bg-black/25 px-2.5 py-0 text-[11px] leading-none text-white outline-none placeholder:text-white/45 focus:border-white/60 focus:ring-2 focus:ring-white/20 sm:h-9 sm:min-h-9 sm:rounded-lg sm:px-3 sm:text-sm"
                     />
                     <button
                       type="submit"
                       disabled={isCapturingWebsite}
-                      className="h-10 rounded-lg border border-white/30 bg-white/15 px-4 text-sm font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="box-border h-6 min-h-6 rounded-md border border-white/30 bg-white/15 px-3 py-0 text-[11px] font-semibold leading-none text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-60 sm:h-9 sm:min-h-9 sm:rounded-lg sm:px-4 sm:text-sm"
                     >
                       {isCapturingWebsite ? "Capturing..." : "Capture"}
                     </button>
@@ -559,7 +564,7 @@ export default function ScreenshotSnippet({settings}: ScreenshotSnippetProps) {
                   <button
                     type="button"
                     onClick={open}
-                    className="mt-4 inline-flex h-9 items-center rounded-lg border border-white/30 bg-white/10 px-4 text-sm font-medium text-white/95 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
+                    className="mt-1 inline-flex h-5 shrink-0 items-center rounded-md border border-white/30 bg-white/10 px-3 text-[10px] font-medium text-white/95 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 sm:hidden"
                   >
                     Choose file
                   </button>

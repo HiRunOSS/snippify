@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type CSSProperties,
   useEffect,
   useMemo,
   useRef,
@@ -56,9 +57,56 @@ export default function BackgroundSelect({
 }: BackgroundSelectProps) {
   const sortedCategories = useMemo(sortBackgroundCategories, []);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isFixedDropdown, setIsFixedDropdown] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>({});
   const [uploadError, setUploadError] = useState("");
+
+  useEffect(() => {
+    if (!isOpen || !containerRef.current) {
+      return;
+    }
+
+    const updateDropdownPosition = () => {
+      const shouldUseFixedDropdown = window.innerWidth < 1024;
+      setIsFixedDropdown(shouldUseFixedDropdown);
+
+      if (!shouldUseFixedDropdown) {
+        setDropdownStyle({});
+        return;
+      }
+
+      const triggerRect = containerRef.current?.getBoundingClientRect();
+
+      if (!triggerRect) {
+        return;
+      }
+
+      const menuWidth = 252;
+      const viewportPadding = 8;
+      const left = Math.min(
+        Math.max(triggerRect.left, viewportPadding),
+        window.innerWidth - menuWidth - viewportPadding,
+      );
+
+      setDropdownStyle({
+        bottom: window.innerHeight - triggerRect.top + 8,
+        left,
+        width: menuWidth,
+      });
+    };
+
+    updateDropdownPosition();
+    window.addEventListener("resize", updateDropdownPosition);
+    window.addEventListener("scroll", updateDropdownPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("scroll", updateDropdownPosition, true);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -66,7 +114,12 @@ export default function BackgroundSelect({
     }
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+
+      if (
+        !containerRef.current?.contains(target) &&
+        !dropdownRef.current?.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -137,7 +190,15 @@ export default function BackgroundSelect({
       </button>
 
       {isOpen ? (
-        <div className="absolute bottom-full left-0 z-40 mb-2 w-[252px] overflow-hidden rounded-md border border-black/20 bg-white text-black shadow-2xl shadow-black/20 dark:border-white/10 dark:bg-[#111010] dark:text-gray-100 dark:shadow-black/60">
+        <div
+          ref={dropdownRef}
+          className={`z-50 overflow-hidden rounded-md border border-black/20 bg-white text-black shadow-2xl shadow-black/20 dark:border-white/10 dark:bg-[#111010] dark:text-gray-100 dark:shadow-black/60 ${
+            isFixedDropdown
+              ? "fixed"
+              : "absolute bottom-full left-0 mb-2 w-[252px]"
+          }`}
+          style={isFixedDropdown ? dropdownStyle : undefined}
+        >
           <div className="scrollbar-hide max-h-80 overflow-y-auto overscroll-contain px-2 py-2">
             <div className="pb-3">
               <div className="pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">

@@ -101,6 +101,52 @@ const THEME_BY_ID = Object.fromEntries(
 );
 
 let areCodeThemesRegistered = false;
+let isMonacoConsoleFilterInstalled = false;
+
+const isBenignMonacoConsoleError = (value: unknown) => {
+  if (value instanceof Error) {
+    const message = `${value.name} ${value.message}`;
+    const stack = value.stack ?? "";
+
+    return (
+      (message.includes("Canceled") ||
+        message.includes("NotAllowedError") ||
+        message.includes("Write permission denied")) &&
+      (stack.includes("monaco-editor") || stack.includes("cdn.jsdelivr.net"))
+    );
+  }
+
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  return (
+    (value.includes("Canceled") ||
+      value.includes("NotAllowedError") ||
+      value.includes("Write permission denied")) &&
+    (value.includes("monaco-editor") || value.includes("cdn.jsdelivr.net"))
+  );
+};
+
+const installMonacoConsoleFilter = () => {
+  if (isMonacoConsoleFilterInstalled || typeof window === "undefined") {
+    return;
+  }
+
+  const originalConsoleError = console.error.bind(console);
+
+  console.error = (...args: Parameters<typeof console.error>) => {
+    if (args.some(isBenignMonacoConsoleError)) {
+      return;
+    }
+
+    originalConsoleError(...args);
+  };
+
+  isMonacoConsoleFilterInstalled = true;
+};
+
+installMonacoConsoleFilter();
 
 const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -341,7 +387,7 @@ export default function CodeSnippet() {
       }`}
       style={{
         background: gradient,
-        padding: `${effectiveCodePadding}px`,
+        padding: `clamp(${Math.min(effectiveCodePadding, 12)}px, 6vw, ${effectiveCodePadding}px)`,
       }}
     >
       <div

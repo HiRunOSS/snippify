@@ -56,7 +56,7 @@ export default function LandingFooter() {
               rel="noreferrer"
               className="underline-offset-4 transition hover:text-gray-700 hover:underline dark:hover:text-gray-200"
             >
-              @hiarun01
+              @hiarun02
             </Link>
           </div>
         </div>

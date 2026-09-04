@@ -140,8 +140,10 @@ const PREVIOUS_MACOS_DEFAULT_GRADIENT =
   "center / cover no-repeat url('/backgrounds/macos/macos-gold.svg')";
 const PREVIOUS_PREMIUM_DEFAULT_GRADIENT =
   "radial-gradient(circle at 18% 12%, rgba(98, 224, 213, 0.92) 0%, rgba(42, 149, 151, 0.96) 38%, rgba(34, 40, 68, 1) 100%)";
-const DEFAULT_SCREENSHOT_GRADIENT =
+const PREVIOUS_SCREENSHOT_DEFAULT_GRADIENT =
   "center / cover no-repeat url('/backgrounds/macos/mac-bg-2.jpg')";
+const DEFAULT_SCREENSHOT_GRADIENT =
+  "center / cover no-repeat url('/backgrounds/macos/mac-bg-7.png')";
 const STORAGE_KEY = "snippify-editor-state";
 const CODE_SAVE_DEBOUNCE_MS = 250;
 const MAX_PERSISTED_IMAGE_SIZE_BYTES = 12 * 1024 * 1024;
@@ -255,7 +257,7 @@ const getStoredState = (): Partial<PersistedEditorState> | null => {
 };
 
 const normalizeEditorMode = (value: unknown): EditorMode => {
-  return value === "screenshot" || value === "code" ? value : "code";
+  return value === "screenshot" || value === "code" ? value : "screenshot";
 };
 
 const normalizeCodeWindowStyle = (value: unknown): CodeWindowStyle => {
@@ -270,7 +272,7 @@ export const useEditorStore = create<EditorStore>((set) => {
   let pendingCodePatch: Partial<PersistedEditorState> = {};
 
   const getDefaultPersistedState = (): PersistedEditorState => ({
-    editorMode: "code",
+    editorMode: "screenshot",
     code: DEFAULT_CODE,
     fontSize: 14,
     codePadding: 64,
@@ -360,7 +362,7 @@ export const useEditorStore = create<EditorStore>((set) => {
 
   return {
     // Active editor state
-    editorMode: "code",
+    editorMode: "screenshot",
     setEditorMode: (editorMode) => {
       const newState = {editorMode};
       saveToLocalStorage(newState);
@@ -536,7 +538,9 @@ export const useEditorStore = create<EditorStore>((set) => {
         codeWindowTitle: normalizedPersistedState.codeWindowTitle,
         codeGradient: normalizedPersistedState.codeGradient,
         screenshotGradient:
-          storedState.screenshotGradient ?? state.screenshotGradient,
+          storedState.screenshotGradient === PREVIOUS_SCREENSHOT_DEFAULT_GRADIENT
+            ? DEFAULT_SCREENSHOT_GRADIENT
+            : (storedState.screenshotGradient ?? state.screenshotGradient),
         isBackgroundHidden:
           storedState.isBackgroundHidden ?? state.isBackgroundHidden,
         showLineNumbers: normalizedPersistedState.showLineNumbers,

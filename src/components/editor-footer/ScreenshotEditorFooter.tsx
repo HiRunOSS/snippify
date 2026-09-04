@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {useEffect, useRef, useState, type CSSProperties} from "react";
 import {Button} from "../ui/button";
 import {Input} from "../ui/input";
 import {Label} from "../ui/label";
@@ -85,16 +85,87 @@ export default function ScreenshotEditorFooter({
 
   const [isSizeDialogOpen, setIsSizeDialogOpen] = useState(false);
   const [isCornerOpen, setIsCornerOpen] = useState(false);
+  const [isFixedCornerDropdown, setIsFixedCornerDropdown] = useState(false);
+  const [cornerDropdownStyle, setCornerDropdownStyle] =
+    useState<CSSProperties>({});
+  const cornerTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const cornerDropdownRef = useRef<HTMLDivElement | null>(null);
   const hasVisibleFrame = settings.frameStyle !== "default";
   const safeImageScale = clampImageScale(settings.imageScale);
   const safeCornerRadius = clampCornerRadius(settings.cornerRadius);
 
+  useEffect(() => {
+    if (!isCornerOpen) {
+      return;
+    }
+
+    const updateCornerDropdownPosition = () => {
+      const shouldUseFixedDropdown = window.innerWidth < 1024;
+      setIsFixedCornerDropdown(shouldUseFixedDropdown);
+
+      if (!shouldUseFixedDropdown) {
+        setCornerDropdownStyle({});
+        return;
+      }
+
+      const triggerRect = cornerTriggerRef.current?.getBoundingClientRect();
+
+      if (!triggerRect) {
+        return;
+      }
+
+      const menuWidth = 256;
+      const viewportPadding = 8;
+      const left = Math.min(
+        Math.max(triggerRect.left, viewportPadding),
+        window.innerWidth - menuWidth - viewportPadding,
+      );
+
+      setCornerDropdownStyle({
+        bottom: window.innerHeight - triggerRect.top + 8,
+        left,
+        width: menuWidth,
+      });
+    };
+
+    updateCornerDropdownPosition();
+    window.addEventListener("resize", updateCornerDropdownPosition);
+    window.addEventListener("scroll", updateCornerDropdownPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateCornerDropdownPosition);
+      window.removeEventListener("scroll", updateCornerDropdownPosition, true);
+    };
+  }, [isCornerOpen]);
+
+  useEffect(() => {
+    if (!isCornerOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+
+      if (
+        !cornerTriggerRef.current?.contains(target) &&
+        !cornerDropdownRef.current?.contains(target)
+      ) {
+        setIsCornerOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [isCornerOpen]);
+
   return (
-    <section className="fixed bottom-0 z-10 flex w-full justify-center">
-      <div className="mx-auto flex w-full max-w-7xl justify-center">
-        <div className="flex min-h-auto w-full flex-col items-center rounded-t-2xl border border-black/10 bg-white/20 px-2 py-2 text-black backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/80 dark:text-gray-100 sm:min-h-20 sm:px-6 sm:py-4">
-          <div className="flex w-full flex-wrap items-end justify-center gap-x-3 gap-y-3 lg:flex-nowrap lg:justify-between lg:gap-x-4">
-            <div className="w-20 space-y-1">
+    <section className="fixed inset-x-0 bottom-0 z-10 flex w-full justify-center">
+      <div className="mx-auto flex w-full max-w-7xl justify-center px-2 sm:px-0">
+        <div className="flex w-full flex-col items-center rounded-t-2xl border border-black/10 bg-white/30 px-2 py-2 text-black backdrop-blur-2xl dark:border-white/10 dark:bg-[#111010]/85 dark:text-gray-100 sm:min-h-20 sm:px-6 sm:py-4">
+          <div className="scrollbar-hide flex w-full items-end justify-start gap-3 overflow-x-auto pb-1 lg:justify-between lg:overflow-visible">
+            <div className="w-20 shrink-0 space-y-1">
               <Label
                 htmlFor="screenshot-gradient"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -108,7 +179,7 @@ export default function ScreenshotEditorFooter({
               />
             </div>
 
-            <div className="w-20 space-y-1">
+            <div className="w-20 shrink-0 space-y-1">
               <Label
                 htmlFor="screenshot-image-scale"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -131,7 +202,7 @@ export default function ScreenshotEditorFooter({
               />
             </div>
 
-            <div className="w-20 space-y-1">
+            <div className="w-20 shrink-0 space-y-1">
               <Label
                 htmlFor="screenshot-background-blur"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -157,7 +228,7 @@ export default function ScreenshotEditorFooter({
               />
             </div>
 
-            <div className="w-36 space-y-1">
+            <div className="w-36 shrink-0 space-y-1">
               <Label
                 htmlFor="screenshot-corner-trigger"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -166,6 +237,7 @@ export default function ScreenshotEditorFooter({
               </Label>
               <div className="relative">
                 <button
+                  ref={cornerTriggerRef}
                   id="screenshot-corner-trigger"
                   type="button"
                   aria-haspopup="dialog"
@@ -182,7 +254,18 @@ export default function ScreenshotEditorFooter({
                 </button>
 
                 {isCornerOpen ? (
-                  <div className="absolute bottom-full left-0 z-30 mb-2 w-64 rounded-lg border border-black/10 bg-white p-3 shadow-2xl shadow-black/20 dark:border-white/10 dark:bg-[#111010] dark:shadow-black/60">
+                  <div
+                    ref={cornerDropdownRef}
+                    className={`z-50 rounded-lg border border-black/10 bg-white p-3 shadow-2xl shadow-black/20 dark:border-white/10 dark:bg-[#111010] dark:shadow-black/60 ${
+                      isFixedCornerDropdown
+                        ? "fixed"
+                        : "absolute bottom-full left-0 mb-2 w-64"
+                    }`}
+                    style={
+                      isFixedCornerDropdown ? cornerDropdownStyle : undefined
+                    }
+                    onPointerDown={(event) => event.stopPropagation()}
+                  >
                     <div className="grid grid-cols-3 gap-3">
                       {CORNER_PRESETS.map((preset) => {
                         const isActive = safeCornerRadius === preset.radius;
@@ -267,7 +350,7 @@ export default function ScreenshotEditorFooter({
               </div>
             </div>
 
-            <div className="w-36 space-y-1">
+            <div className="w-36 shrink-0 space-y-1">
               <Label
                 htmlFor="screenshot-frame"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -309,7 +392,7 @@ export default function ScreenshotEditorFooter({
               </Select>
             </div>
 
-            <div className="w-24 space-y-1">
+            <div className="w-24 shrink-0 space-y-1">
               <Label
                 htmlFor="screenshot-border-width"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -336,7 +419,7 @@ export default function ScreenshotEditorFooter({
               />
             </div>
 
-            <div className="w-32 space-y-1">
+            <div className="w-32 shrink-0 space-y-1">
               <Label
                 htmlFor="screenshot-layout"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -378,7 +461,7 @@ export default function ScreenshotEditorFooter({
               </Select>
             </div>
 
-            <div className="w-28 space-y-1">
+            <div className="w-28 shrink-0 space-y-1">
               <Label
                 htmlFor="screenshot-shadow"
                 className="text-xs text-gray-800 dark:text-gray-200/90"
@@ -406,7 +489,7 @@ export default function ScreenshotEditorFooter({
               </Select>
             </div>
 
-            <div className="flex w-24 flex-col space-y-1">
+            <div className="flex w-24 shrink-0 flex-col space-y-1">
               <Label className="text-xs text-gray-800 dark:text-gray-200/90">
                 Size
               </Label>
