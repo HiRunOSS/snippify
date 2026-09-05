@@ -48,6 +48,20 @@ export default function LandingFooter() {
             })}
           </nav>
 
+          <a
+            href="https://twelve.tools"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Featured on Twelve Tools"
+          >
+            <img
+              src="https://twelve.tools/badge0-white.svg"
+              alt="Featured on Twelve Tools"
+              width="148"
+              height="40"
+            />
+          </a>
+
           <div className="text-xs text-gray-500 dark:text-gray-400">
             Built by{" "}
             <Link
